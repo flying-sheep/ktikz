@@ -1,0 +1,52 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+	<file>tikzcommands.xml</file>
+	<file>icons/qtikz-22.png</file>
+	<file>icons/qtikz-128.png</file>
+	<file>icons/dialog-cancel.png</file>
+	<file>icons/edit-clear-locationbar-rtl.png</file>
+	<file>icons/view-refresh.png</file>
+	<!-- File menu -->
+	<file>icons/document-new.png</file>
+	<file>icons/document-open.png</file>
+	<file>icons/document-open-recent.png</file>
+	<file>icons/document-save.png</file>
+	<file>icons/document-save-as.png</file>
+	<file>icons/document-export.png</file>
+	<file>icons/application-exit.png</file>
+	<!-- Edit menu -->
+	<file>icons/edit-undo.png</file>
+	<file>icons/edit-redo.png</file>
+	<file>icons/edit-copy.png</file>
+	<file>icons/edit-cut.png</file>
+	<file>icons/edit-paste.png</file>
+	<file>icons/format-indent-more.png</file>
+	<file>icons/edit-find.png</file>
+	<file>icons/go-up.png</file>
+	<file>icons/go-down.png</file>
+	<file>icons/window-close.png</file>
+	<file>icons/go-jump.png</file>
+	<!-- Export -->
+	<file>icons/image-x-eps.png</file>
+	<file>icons/application-pdf.png</file>
+	<file>icons/image-png.png</file>
+	<!-- View -->
+	<file>icons/zoom-in.png</file>
+	<file>icons/zoom-out.png</file>
+	<file>icons/go-previous.png</file>
+	<file>icons/go-next.png</file>
+	<file>icons/process-stop.png</file>
+	<file>icons/run-build.png</file>
+	<file>icons/application-x-executable.png</file>
+	<!-- Configure -->
+	<file>icons/configure-toolbars.png</file>
+	<file>icons/configure.png</file>
+	<file>icons/accessories-text-editor.png</file>
+	<file>icons/preferences-desktop-color.png</file>
+	<file>icons/preferences-desktop-theme.png</file>
+	<!-- Help -->
+	<file>icons/help-contents.png</file>
+	<file>icons/help-contextual.png</file>
+	<file>icons/qt-logo-22.png</file>
+</qresource>
+</RCC>

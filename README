@@ -1,0 +1,53 @@
+KTikZ is a program for making pictures using tikz.
+
+Usage
+-----
+
+You write the tikz code in the editor and KTikZ automatically generates the
+image in a preview panel.
+
+The complete description of the usage is available in the application itself,
+under Help -> KTikZ Manual.
+
+Installation
+------------
+
+See the INSTALL file.
+
+License
+-------
+
+Copyright (C) 2007-2010 Florian Hackenberger <florian@hackenberger.at>
+              2007-2010 Glad Deschrijver <glad.deschrijver@gmail.com>
+Portions are copyrighted also by other people (see app/tikzeditor.cpp,
+common/utils/lineedit.cpp and part/part.cpp).
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+This program links to poppler which is based on xpdf code, which currently is
+released under the GPL version 2 only.  As long as xpdf is not released under
+the GPL version 2 or later, this program cannot be released under the GPL
+version 3.  Currently there are no other restrictions for this move.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+The icons are copied or derived from KDE's Oxygen icon set which is released
+under the LGPL (see http://www.oxygen-icons.org/?page_id=4).  The font used
+in the qtikz and ktikz icons is Prociono and is released under the following
+license:
+
+  This font has been released into the public domain by its author,
+  Barry Schwartz. This applies worldwide.
+
+  In some countries this may not be legally possible; if so:
+
+  Barry Schwartz grants anyone the right to use this work for any
+  purpose, without any conditions, unless such conditions are required
+  by law.
+
+The Qt logo icon comes from Qt which is released under the LGPL.

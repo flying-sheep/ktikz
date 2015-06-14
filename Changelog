@@ -1,0 +1,256 @@
+version 0.10 (2010-08-26):
+- KDE integration (the possibility to compile Qt-only still exists)
+- template files on remote machines can be used using KIO (only in the KDE
+  version)
+- TikZ source files on remote machines can be loaded, saved and exported
+  using KIO (only in the KDE version)
+- error messages while generating the preview are shown in the preview
+  window itself
+- zooming is done in a separate thread now, so the interface is not blocked
+  when zooming at large sizes
+- a kpart is available that can be used to view TikZ source files in
+  konqueror (the kpart opens files having the text/x-pgf mimetype)
+- update list of tikz commands
+- remove bug which causes ktikz to hang (since Qt 4.6) when typesetting
+  a picture
+- remove bug: cannot find TikZ documentation when selecting "TikZ Manual"
+  in the Help menu, even if configured correctly
+- display description of a newly inserted tikz command (using command
+  completion or menu) in the statusbar, so that the user still sees the
+  usage of a command after it is inserted
+- add option to compile the TikZ code only when pushing a "Build" button
+- add reload button
+- add shell script and ktikz template to the examples directory which can
+  be used to generate the preview with the latex; dvips; ps2pdf sequence
+  instead of pdflatex (the usage is described in the shell script code)
+- check whether the file has changed when ktikz gets the focus (similar
+  to kwrite)
+- in the kpart check for file changes and reload if there are any (similar
+  as in okular)
+- the zoom percentage field is now displayed and edited in the user's locale
+- added documentation
+- remove bug: when the error box is larger than the preview and the next
+  compilation does not give errors, the error box is still visible outside
+  the area covered by the preview
+- try to find or use the default hard-coded (configurable in conf.pri and
+  CMakeLists.txt) path to the TikZ documentation when an empty path is
+  stored in the local settings (this is the case e.g. when ktikz is run
+  for the first time)
+- when inserting code using code-completion, the arguments and options that
+  must be filled in are marked by a bullet, the bullets can be browsed with
+  the Tab-key
+- now also an URL to an online version of the TikZ documentation can be
+  specified in the configuration dialog
+- an icon for Windows and an NSIS Windows Installer script are now available
+- the "Insert" menu is now also translated
+version 0.9 (2009-09-10):
+- remove bug that on startup the item selected in the template combobox
+  did not correspond to the text in the lineedit of the combobox
+- correct the height of the lineedits in the configuration dialog
+- the path to the TikZ documentation must now be set in the configuration
+  dialog
+- don't wait one second before generating the preview when a file is
+  loaded, the template is changed or shell escaping is toggled
+- only files are used now as a template file (previously directories
+  and everything with a valid path was used), otherwise the default
+  template is used
+- if the replacement text is empty, then the default template is used
+  instead of giving non-informative errors
+- when the commands dock is visible (instead of the menu), the code that
+  will be inserted is visible in the status bar on hovering the item in
+  the list
+- clicking on an item in the commands dock only includes the corresponding
+  code once (instead of twice)
+- added file name completion to the template line edit and the line edits
+  in the configuration dialog
+- space and tab markers resize according to the font size of the main text
+- the color of the space and tab markers can be changed in the
+  configuration dialog
+- white space and tabulator settings are separate now
+- scrolling in the text edit with the arrow keys is faster now
+- better completion of \begin{... and \end{...
+- allow to use the icons set in KDE4 when the appropriate variable in
+  conf.pri is set
+- remove bug that the "Next Image" and "Previous Image" buttons remained
+  visible when emptying the code text area
+- remove bug: statustip of the toggle view actions in the Settings menu is
+  not shown when a toolbar or sidebar is hidden on startup
+- add support for session management (open windows will be reopened after
+  logging out and logging in again)
+- added option in the config dialog to enable/disable completion of the
+  tikz commands
+- trying to open a file from the "Open Recent" menu that does not exist
+  anymore does not cause an empty window to be opened anymore, furthermore
+  the file is removed from the "Open Recent" list
+Version 0.8 (2009-05-25):
+- allow text under icons in toolbar
+- remove bug: when a second ktikz window is closed while typesetting,
+  the cursor is not restored from busy to normal
+- remove bug: when the document is untitled and not yet saved, then
+  opening a file opens the file in the current window, destroying the
+  unsaved text
+- added some tikz commands to the list of commands
+- disable "Save" and "Save As" actions when the file in the text editor
+  is the same as on disk
+- replace the "Replace this occurrence" dialog by a widget shown at the
+  bottom of the text editor
+- added filter "PGF files" in "Open File" dialog
+- the previously selected templates can now be selected from a combobox
+- added "Clear" button to each line edit
+- remove bug: the size of the default font did not change after setting
+  a new font size in the config dialog
+- new way of writing the temporary latex and pgf files, this also solves
+  the bug in which the line numbers in the log window did not correspond
+  to the line numbers in the editor
+- each time the template is changed a new QTemporaryFile is used, this
+  avoids the bug that if the template contains less characters, then the
+  bottom of the old template is still there in the file (luckily latex
+  stops parsing at the first \end{document}, so this bug was not visible)
+- allow to use KDE4 file dialogs when the appropriate variable in conf.pri
+  is set
+- remove bug (I hope) that caused ktikz to crash when zooming while ktikz
+  is typesetting
+Version 0.7 (2008-08-26):
+- disable previous image button if the first image is shown, disable
+  next image button if the last image is shown
+- the first time that the End button is pressed the cursor is moved to
+  the end of the line (on screen), the second time the cursor is moved
+  to the end of the block (end of the line in the file)
+- don't run latex on startup when no document is loaded from the command
+  line
+- adjust size of the viewport in which the preview is displayed when new
+  items are added to the tikz picture
+- added completion of the tikz commands
+- the tikz commands are now loaded from an XML file
+- corrected the size of the colored background around the highlighted
+  brackets
+- remove bug in ConfigDialog::selectFont() (replace "if (&ok)" by "if (ok)")
+- the command "New" in the "File" menu now opens a new empty window,
+  the commands "Open" and "Open Recent" open the selected file in a new
+  window, a "Close" command is added which empties the current window
+- the (empty) document is not typesetted anymore when the "Close" command
+  (which has the same behavior as the old "New" command) is executed
+- add the directory in which the template file is located to the
+  $TEXINPUTS environment variable (useful if the template \inputs other
+  files)
+- layout changes in the configuration dialog
+Version 0.6 (2008-02-25):
+- added find and replace
+- added go to line
+- added indent selected paragraph
+- remove crash when first character of the document is '\'
+- allow usage of -shell-escape, so that functions can be plotted using
+  gnuplot from within tikz
+- added highlighting of the current line in code editor
+- added show white spaces
+- added show matching brackets
+- allow scrolling of code editor without moving the cursor with Ctrl+Up
+  and Ctrl+Down
+- added template support for the LaTeX file in which the PGF picture
+  is included
+- updated the icons to the latest version of Oxygen (now available at
+  svn://anonsvn.kde.org/home/kde/trunk/KDE/kdebase/runtime/pics/oxygen/)
+Version 0.5 (2007-10-02):
+- removed memory leaks
+- added Qt logo to the "About Qt" item in the Help menu
+- zooming now keeps the same object in the center of the visible area
+  that was previously in the center (instead of scrolling to position
+  (0,0))
+- the tikz commands can be inserted from either a menu or a dockwidget
+- more tikz commands are added to the menu/dockwidget
+- put the preview area in a dock widget which allows more flexibility
+  than a splitter
+- added an item in the "Help" menu for opening the file pgfmanual.pdf in
+  the PDF viewer configured in the system (if that file is located
+  somewhere in the LaTeX texmf tree)
+- switched to poppler version 0.6
+- removed bug in the config dialog which caused the table items to
+  not be shown as disabled upon opening the config dialog when the
+  highlighting is set to standard
+- added a What's This button in the configuration dialog
+- remove crash when zooming at startup before loading or editing tikz
+  code
+- ktikz now remembers the zoom factor from the previous session
+- the application icon is now also installed and is referred to in the
+  desktop file (so the icon also appears in the KMenu)
+- the build files (*.o *.ui moc_* qrc_*) are now put in a separate build
+  directory (when building), leaving the source directory clean
+Version 0.4 (2007-08-13):
+- added German translation
+- show status tip for the "Open Recent" and "Export" submenus
+- it is now possible to have more than one image in one document: just
+  put the different tikzpictures one below the other in the code and
+  then press the "Show previous image" and "Show next image" button to
+  browse between the previews (but it is not possible to save or export
+  them separately)
+- the previous picture is not displayed anymore in the preview when
+  the text edit becomes empty (or when the user starts a new document)
+- the document modification status is shown correctly now in the title bar
+- the preview can be scrolled by dragging the image
+- added undo, redo and select all to the Edit menu and to the toolbar
+- added comment/uncomment of the current line or selection
+- the scrollbars will disappear if the image becomes smaller than the
+  view when zooming out
+- added a menu with tikz commands
+- a better highlighting of the tikz code is implemented based on the
+  contents of the tikz commands menu
+- made an application icon (I just took the kate icon from oxygen and
+  added the text "KTikZ", the text in the icon is in the Fertigo font
+  from http://www.josbuivenga.demon.nl/fertigo.html)
+- added What's This texts for most widgets and icons
+- added a configuration dialog (the highlighting colors and fonts, the
+  number of entries in the "Open Recent" menu and the path to pdflatex
+  and pdftops can be set)
+- messages on standard output are only shown when compiled in debug mode
+- in the log box short messages are shown instead of the contents of the
+  log file; the contents of the log file can be viewed by pressing the
+  "View Log" button
+- added an "Abort typesetting" button; for example, typesetting the
+  following code never exits:
+  \begin{tikzpicture}[x=1cm,y=1cm % note the missing ]
+    \draw[->] (0,0) -- (4,0);
+  \end{tikzpicture}
+- added a context menu to the preview area
+- more sensible default sizes for the different widgets in the main
+  window on first startup
+Version 0.3 (2007-08-06):
+- show in the statusbar the position of the cursor in the text edit
+- the preview image (in PDF format) is displayed using poppler instead
+  of converting the PDF file to PNG first and displaying the PNG file
+  (poppler version 0.5.4 is used)
+- added zooming of the image (using poppler)
+- export to PNG is done directly in Qt now; as a consequence (of this
+  and of using poppler to display the preview image) ktikz no longer
+  depends on ImageMagick
+- added "Open Recent" menu
+- if ktikz is run on the command line, then it loads the first argument
+  (if it is a valid file name)
+- the open/save file dialog remembers the last directory in which a
+  PGF source file was opened/saved
+- loading of translations if available
+- added French translation
+- changed qmake files so that the files will be installed in the correct
+  place (the installation prefix can be configured in the file conf.pri)
+- the wait cursor is displayed while typesetting the PGF picture to PDF
+Version 0.2 (2007-08-02):
+- replaced the icons in XPM format by icons in PNG format from KDE4's
+  Oxygen theme (obtained from
+  svn://anonsvn.kde.org/home/kde/trunk/KDE/kdelibs/pics/oxygen)
+- placed the text edit and the preview area in a splitter so that their
+  relative width can be changed by the user
+- placed the log text edit in a dockwidget (which can be hidden)
+- temporary files are now put in QDir::tempPath() + "/ktikz"
+  (on Linux this is /tmp/ktikz), so your working directory remains clean
+- closing the application now removes all temporary files and stops the
+  thread
+- the first time that the thread (generating the output image) is
+  executed is not on startup anymore, but when the user actually
+  changes the text or loads a file
+- images can now be exported to EPS, PDF and PNG
+- for some standard actions, the standard key sequence is used (e.g.
+  QKeySequence::Open instead of Ctrl+O)
+- the toolbars can be hidden
+- corrected typo "TiKz" to "TikZ"
+- a function runProcess is used which makes the code of generatePdfFile
+  and generatePngFile easier (in tikzpngpreviewer.cpp)
+- made a better about dialog
