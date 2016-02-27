@@ -18,7 +18,6 @@
 
 #include "filedialog.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KMessageBox>
 #include <KIO/NetAccess>
 
@@ -31,52 +30,3 @@ Url FileDialog::getSaveUrl(QWidget *parent, const QString &caption, const Url &d
 {
 	return KFileDialog::getSaveUrl(dir, filter, parent, caption, KFileDialog::ConfirmOverwrite);
 }
-#else
-#include <QCoreApplication>
-#include <QMessageBox>
-
-Url FileDialog::getOpenUrl(QWidget *parent, const QString &caption, const Url &dir, const QString &filter)
-{
-	const QStringList filterList = filter.split('\n');
-	QString parsedFilter;
-	for (int i = 0; i < filterList.size(); ++i)
-	{
-		const QStringList filterItems = filterList.at(i).split('|');
-		if (i > 0)
-			parsedFilter += ";;";
-		parsedFilter += filterItems.at(1) + " (" + filterItems.at(0) + ')';
-	}
-
-	const QString openFileName = QFileDialog::getOpenFileName(parent, caption, dir.path(), parsedFilter);
-	if (openFileName.isEmpty())
-		return Url();
-	return Url(openFileName);
-}
-
-Url FileDialog::getSaveUrl(QWidget *parent, const QString &caption, const Url &dir, const QString &filter)
-{
-	const QStringList filterList = filter.split('\n');
-	QString parsedFilter;
-	for (int i = 0; i < filterList.size(); ++i)
-	{
-		const QStringList filterItems = filterList.at(i).split('|');
-		if (i > 0)
-			parsedFilter += ";;";
-		parsedFilter += filterItems.at(1) + " (" + filterItems.at(0) + ')';
-	}
-
-	const QString saveAsFileName = QFileDialog::getSaveFileName(parent, caption, dir.path(), parsedFilter);
-	if (saveAsFileName.isEmpty())
-		return Url();
-
-	if (QFile::exists(saveAsFileName))
-	{
-		if (QMessageBox::warning(parent, QCoreApplication::applicationName(),
-		    tr("File \"%1\" already exists.\nDo you want to overwrite it?").arg(saveAsFileName),
-		    QMessageBox::Save | QMessageBox::Default,
-		    QMessageBox::Discard | QMessageBox::Escape) == QMessageBox::Discard)
-			return Url();
-	}
-	return Url(saveAsFileName);
-}
-#endif

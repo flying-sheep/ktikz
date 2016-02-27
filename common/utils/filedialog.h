@@ -21,7 +21,6 @@
 
 #include "url.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KFileDialog>
 
 class FileDialog : public KFileDialog
@@ -35,17 +34,5 @@ public:
 	static Url getOpenUrl(QWidget *parent = 0, const QString &caption = QString(), const Url &dir = Url(), const QString &filter = QString());
 	static Url getSaveUrl(QWidget *parent = 0, const QString &caption = QString(), const Url &dir = Url(), const QString &filter = QString());
 };
-#else
-#include <QFileDialog>
-
-class FileDialog : public QFileDialog
-{
-public:
-	explicit FileDialog(QWidget *parent = 0, const QString &caption = QString(), const QString &directory = QString(), const QString &filter = QString()) : QFileDialog(parent, caption, directory, filter) {}
-
-	static Url getOpenUrl(QWidget *parent = 0, const QString &caption = QString(), const Url &dir = Url(), const QString &filter = QString());
-	static Url getSaveUrl(QWidget *parent = 0, const QString &caption = QString(), const Url &dir = Url(), const QString &filter = QString());
-};
-#endif
 
 #endif

@@ -21,7 +21,6 @@
 
 class Icon;
 
-#ifdef KTIKZ_USE_KDE
 #include <KToggleAction>
 
 class ToggleAction : public KToggleAction
@@ -33,21 +32,5 @@ public:
 	ToggleAction(const QString &text, QObject *parent, const QString &name = 0);
 	ToggleAction(const Icon &icon, const QString &text, QObject *parent, const QString &name = 0);
 };
-#else
-#include <QAction>
-
-class ToggleAction : public QAction
-{
-	Q_OBJECT
-
-public:
-	explicit ToggleAction(QObject *parent, const QString &name = 0);
-	ToggleAction(const QString &text, QObject *parent, const QString &name = 0);
-	ToggleAction(const Icon &icon, const QString &text, QObject *parent, const QString &name = 0);
-
-private:
-	void init(const QString &name);
-};
-#endif
 
 #endif

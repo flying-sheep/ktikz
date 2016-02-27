@@ -19,7 +19,6 @@
 #ifndef KTIKZ_COLORBUTTON_H
 #define KTIKZ_COLORBUTTON_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KColorButton>
 
 class ColorButton : public KColorButton
@@ -30,33 +29,5 @@ public:
 	explicit ColorButton(QWidget *parent = 0) : KColorButton(parent) {}
 	explicit ColorButton(const QColor &color, QWidget *parent = 0) : KColorButton(color, parent) {}
 };
-#else
-#include <QToolButton>
-
-class ColorButton : public QToolButton
-{
-	Q_OBJECT
-	Q_PROPERTY(QColor color READ color WRITE setColor)
-
-public:
-	explicit ColorButton(QWidget *parent = 0);
-	explicit ColorButton(const QColor &color, QWidget *parent = 0);
-
-	QColor color() const;
-	void setColor(const QColor &color);
-
-signals:
-	void colorChanged();
-
-protected:
-	void paintEvent(QPaintEvent*);
-
-private:
-	QColor m_color;
-
-private slots:
-	void showColorDialog();
-};
-#endif
 
 #endif

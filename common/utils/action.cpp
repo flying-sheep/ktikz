@@ -19,7 +19,6 @@
 #include "action.h"
 #include "icon.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KActionCollection>
 
 KActionCollection *Action::m_actionCollection = 0;
@@ -54,25 +53,3 @@ void Action::setActionCollection(KActionCollection *actionCollection)
 {
 	m_actionCollection = actionCollection;
 }
-#else
-Action::Action(QObject *parent, const QString &name)
-    : QAction(parent)
-{
-	if (!name.isEmpty())
-		setObjectName(name);
-}
-
-Action::Action(const QString &text, QObject *parent, const QString &name)
-    : QAction(text, parent)
-{
-	if (!name.isEmpty())
-		setObjectName(name);
-}
-
-Action::Action(const Icon &icon, const QString &text, QObject *parent, const QString &name)
-    : QAction(icon, text, parent)
-{
-	if (!name.isEmpty())
-		setObjectName(name);
-}
-#endif

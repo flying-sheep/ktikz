@@ -21,7 +21,6 @@
 #include <QDebug>
 #include "mainwindow.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KActionCollection>
 #include <KConfigGroup>
 #include <KLocalizedString>
@@ -33,12 +32,6 @@
 #include <KXMLGUIFactory>
 #include <KIO/Job>
 #include <KIO/NetAccess>
-#else
-#include <QMenuBar>
-#include <QStatusBar>
-#include "aboutdialog.h"
-#include "assistantcontroller.h"
-#endif
 
 #include <QCloseEvent>
 #include <QCompleter>
@@ -84,30 +77,16 @@ static const QString s_tempFileName = "tikzcode.pgf";
 
 MainWindow::MainWindow()
 {
-#ifndef KTIKZ_USE_KDE
-	m_aboutDialog = 0;
-	m_assistantController = new AssistantController;
-#endif
 	m_configDialog = 0;
 	m_completer = 0;
 
 	s_mainWindowList.append(this);
 
-#if !defined KTIKZ_USE_KDE && QT_VERSION >= 0x040600
-	QStringList themeSearchPaths;
-	themeSearchPaths << QDir::homePath() + "/.local/share/icons/";
-	themeSearchPaths << QIcon::themeSearchPaths();
-	QIcon::setThemeSearchPaths(themeSearchPaths);
-#endif
 
 	setAttribute(Qt::WA_DeleteOnClose);
-#ifdef KTIKZ_USE_KDE
 	setObjectName("ktikz#");
 	setWindowIcon(KIcon("ktikz"));
 	Action::setActionCollection(actionCollection());
-#else
-	setWindowIcon(QIcon(":/icons/qtikz-22.png"));
-#endif
 
 	setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
@@ -155,19 +134,13 @@ MainWindow::MainWindow()
 	setCentralWidget(mainWidget);
 
 	createActions();
-#ifndef KTIKZ_USE_KDE
-	createToolBars(); // run first in order to be able to add file/editToolBar->toggleViewAction() to the menu
-	createMenus();
-#endif
 	createCommandInsertWidget(); // must happen after createMenus and before readSettings
 	createStatusBar();
 
-#ifdef KTIKZ_USE_KDE
 	setupGUI(ToolBar | Keys | StatusBar | Save);
 	setXMLFile("ktikzui.rc");
 	createGUI();
 	guiFactory()->addClient(this);
-#endif
 
 	connect(m_commandInserter, SIGNAL(showStatusMessage(QString,int)),
 	        statusBar(), SLOT(showMessage(QString,int)));
@@ -212,9 +185,6 @@ MainWindow::~MainWindow()
 
 	writeSettings();
 
-#ifndef KTIKZ_USE_KDE
-	delete m_assistantController;
-#endif
 
 	delete m_tikzPreviewController;
 	m_logHighlighter->deleteLater();
@@ -232,7 +202,6 @@ QWidget *MainWindow::widget()
 	return this;
 }
 
-#ifdef KTIKZ_USE_KDE
 bool MainWindow::queryClose()
 {
 	return maybeSave();
@@ -249,7 +218,6 @@ void MainWindow::saveProperties(KConfigGroup &group)
 {
 	group.writePathEntry("CurrentUrl", m_currentUrl.url());
 }
-#endif
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
@@ -372,19 +340,6 @@ void MainWindow::showTikzDocumentation()
 	QApplication::restoreOverrideCursor();
 }
 
-#ifndef KTIKZ_USE_KDE
-void MainWindow::about()
-{
-	if (!m_aboutDialog)
-		m_aboutDialog = new AboutDialog(this);
-	m_aboutDialog->exec();
-}
-
-void MainWindow::showDocumentation()
-{
-	m_assistantController->showDocumentation();
-}
-#endif
 
 /***************************************************************************/
 
@@ -408,7 +363,6 @@ void MainWindow::logUpdated()
 
 /***************************************************************************/
 
-#ifdef KTIKZ_USE_KDE
 void MainWindow::toggleWhatsThisMode()
 {
 	if (QWhatsThis::inWhatsThisMode())
@@ -416,7 +370,6 @@ void MainWindow::toggleWhatsThisMode()
 	else
 		QWhatsThis::enterWhatsThisMode();
 }
-#endif
 
 void MainWindow::createActions()
 {
@@ -468,10 +421,8 @@ void MainWindow::createActions()
 	m_configureAction->setStatusTip(tr("Configure the settings of this application"));
 	m_configureAction->setWhatsThis(tr("<p>Configure the settings of this application.</p>"));
 
-#ifdef KTIKZ_USE_KDE
 	actionCollection()->addAction("toggle_preview", m_previewDock->toggleViewAction());
 	actionCollection()->addAction("toggle_log", m_logDock->toggleViewAction());
-#endif
 
 	/* Help */
 	m_showTikzDocAction = new Action(Icon("help-contents"), tr("TikZ &Manual"), this, "show_tikz_doc");
@@ -479,138 +430,9 @@ void MainWindow::createActions()
 	m_showTikzDocAction->setWhatsThis(tr("<p>Show the manual of TikZ and PGF.</p>"));
 	connect(m_showTikzDocAction, SIGNAL(triggered()), this, SLOT(showTikzDocumentation()));
 
-#ifdef KTIKZ_USE_KDE
 	m_whatsThisAction = KStandardAction::whatsThis(this, SLOT(toggleWhatsThisMode()), this);
-#else
-	m_helpAction = new QAction(Icon("help-contents"), tr("%1 &Handbook").arg(KtikzApplication::applicationName()), this);
-	m_helpAction->setStatusTip(tr("Show the application's documentation"));
-	connect(m_helpAction, SIGNAL(triggered()), this, SLOT(showDocumentation()));
-
-	m_whatsThisAction = QWhatsThis::createAction(this);
-	m_whatsThisAction->setIcon(QIcon(":/icons/help-contextual.png"));
-	m_whatsThisAction->setStatusTip(tr("Show simple description of any widget"));
-
-	m_aboutAction = new QAction(QIcon(":/icons/qtikz-22.png"), tr("&About %1").arg(KtikzApplication::applicationName()), this);
-	m_aboutAction->setStatusTip(tr("Show the application's About box"));
-	connect(m_aboutAction, SIGNAL(triggered()), this, SLOT(about()));
-
-	m_aboutQtAction = new QAction(QIcon(":/icons/qt-logo-22.png"), tr("About &Qt"), this);
-	m_aboutQtAction->setStatusTip(tr("Show the Qt library's About box"));
-	connect(m_aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-#endif
 }
 
-#ifndef KTIKZ_USE_KDE
-void MainWindow::createMenus()
-{
-	QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-	fileMenu->addAction(m_newAction);
-	fileMenu->addAction(m_openAction);
-	fileMenu->addAction(m_openRecentAction);
-	fileMenu->addSeparator();
-	fileMenu->addAction(m_saveAction);
-	fileMenu->addAction(m_saveAsAction);
-	fileMenu->addAction(m_tikzPreviewController->exportAction());
-	fileMenu->addSeparator();
-	fileMenu->addAction(m_reloadAction);
-	fileMenu->addSeparator();
-	fileMenu->addAction(m_closeAction);
-	fileMenu->addSeparator();
-	fileMenu->addAction(m_exitAction);
-
-	menuBar()->addMenu(m_tikzEditorView->menu());
-
-	QMenu *viewMenu = m_tikzPreviewController->menu();
-	viewMenu->insertAction(viewMenu->actions().at(viewMenu->actions().size()-2), m_buildAction);
-	viewMenu->addAction(m_viewLogAction);
-	menuBar()->addMenu(viewMenu);
-
-	m_settingsMenu = menuBar()->addMenu(tr("&Settings"));
-	QMenu *toolBarMenu = new QMenu(tr("&Toolbars"), this);
-	toolBarMenu->setIcon(Icon("configure-toolbars"));
-	toolBarMenu->menuAction()->setStatusTip(tr("Show or hide toolbars"));
-	toolBarMenu->addAction(m_fileToolBar->toggleViewAction());
-	toolBarMenu->addAction(m_editToolBar->toggleViewAction());
-	toolBarMenu->addAction(m_viewToolBar->toggleViewAction());
-	toolBarMenu->addAction(m_runToolBar->toggleViewAction());
-	m_fileToolBar->toggleViewAction()->setStatusTip(tr("Show toolbar \"%1\"").arg(m_fileToolBar->windowTitle()));
-	m_editToolBar->toggleViewAction()->setStatusTip(tr("Show toolbar \"%1\"").arg(m_editToolBar->windowTitle()));
-	m_viewToolBar->toggleViewAction()->setStatusTip(tr("Show toolbar \"%1\"").arg(m_viewToolBar->windowTitle()));
-	m_runToolBar->toggleViewAction()->setStatusTip(tr("Show toolbar \"%1\"").arg(m_runToolBar->windowTitle()));
-	m_settingsMenu->addMenu(toolBarMenu);
-	m_sideBarMenu = new QMenu(tr("&Sidebars"), this);
-	m_sideBarMenu->setIcon(Icon("configure-toolbars"));
-	m_sideBarMenu->menuAction()->setStatusTip(tr("Show or hide sidebars"));
-	m_sideBarMenu->addAction(m_previewDock->toggleViewAction());
-	m_sideBarMenu->addAction(m_logDock->toggleViewAction());
-	m_previewDock->toggleViewAction()->setStatusTip(tr("Show sidebar \"%1\"").arg(m_previewDock->windowTitle()));
-	m_logDock->toggleViewAction()->setStatusTip(tr("Show sidebar \"%1\"").arg(m_logDock->windowTitle()));
-	m_settingsMenu->addMenu(m_sideBarMenu);
-	m_settingsMenu->addSeparator();
-	m_settingsMenu->addAction(m_configureAction);
-	connect(m_fileToolBar->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setToolBarStatusTip(bool)));
-	connect(m_editToolBar->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setToolBarStatusTip(bool)));
-	connect(m_viewToolBar->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setToolBarStatusTip(bool)));
-	connect(m_runToolBar->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setToolBarStatusTip(bool)));
-	connect(m_previewDock->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setDockWidgetStatusTip(bool)));
-	connect(m_logDock->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setDockWidgetStatusTip(bool)));
-
-	menuBar()->addSeparator();
-
-	QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
-	helpMenu->addAction(m_helpAction);
-	helpMenu->addAction(m_showTikzDocAction);
-	helpMenu->addAction(m_whatsThisAction);
-	helpMenu->addSeparator();
-	helpMenu->addAction(m_aboutAction);
-	helpMenu->addAction(m_aboutQtAction);
-}
-
-void MainWindow::createToolBars()
-{
-	m_fileToolBar = addToolBar(tr("File"));
-	m_fileToolBar->setObjectName("FileToolBar");
-	m_fileToolBar->addAction(m_newAction);
-	m_fileToolBar->addAction(m_openAction);
-	m_fileToolBar->addAction(m_saveAction);
-	m_fileToolBar->addAction(m_closeAction);
-
-	m_editToolBar = m_tikzEditorView->toolBar();
-	addToolBar(m_editToolBar);
-
-	QList<QToolBar*> viewAndRunToolBars = m_tikzPreviewController->toolBars();
-	addToolBar(viewAndRunToolBars.at(0));
-	viewAndRunToolBars.at(1)->insertAction(viewAndRunToolBars.at(1)->actions().at(0), m_buildAction);
-	viewAndRunToolBars.at(1)->addAction(m_viewLogAction);
-	addToolBar(viewAndRunToolBars.at(1));
-	m_viewToolBar = viewAndRunToolBars.at(0);
-	m_runToolBar = viewAndRunToolBars.at(1);
-
-	setToolBarStyle();
-}
-
-void MainWindow::setToolBarStyle()
-{
-	QSettings settings(ORGNAME, APPNAME);
-	settings.beginGroup("MainWindow");
-
-	int toolBarStyleNumber = settings.value("ToolBarStyle", 0).toInt();
-	Qt::ToolButtonStyle toolBarStyle = Qt::ToolButtonIconOnly;
-	switch (toolBarStyleNumber)
-	{
-		case 0: toolBarStyle = Qt::ToolButtonIconOnly; break;
-		case 1: toolBarStyle = Qt::ToolButtonTextOnly; break;
-		case 2: toolBarStyle = Qt::ToolButtonTextBesideIcon; break;
-		case 3: toolBarStyle = Qt::ToolButtonTextUnderIcon; break;
-	}
-
-	m_fileToolBar->setToolButtonStyle(toolBarStyle);
-	m_editToolBar->setToolButtonStyle(toolBarStyle);
-	m_tikzPreviewController->setToolBarStyle(toolBarStyle);
-
-	settings.endGroup();
-}
-#endif
 
 void MainWindow::createCommandInsertWidget()
 {
@@ -622,21 +444,13 @@ void MainWindow::createCommandInsertWidget()
 		m_commandsDock = m_commandInserter->getDockWidget(this);
 		addDockWidget(Qt::LeftDockWidgetArea, m_commandsDock);
 
-#ifdef KTIKZ_USE_KDE
 		actionCollection()->addAction("toggle_commands_list", m_commandsDock->toggleViewAction());
-#else
-		m_sideBarMenu->insertAction(m_sideBarMenu->actions().at(1), m_commandsDock->toggleViewAction());
-#endif
 		connect(m_commandsDock->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setDockWidgetStatusTip(bool)));
 	}
 	else
 	{
-#ifdef KTIKZ_USE_KDE
 		KAction *insertAction = new Action(tr("&Insert"), this, "insert");
 		insertAction->setMenu(m_commandInserter->getMenu());
-#else
-		menuBar()->insertMenu(m_settingsMenu->menuAction(), m_commandInserter->getMenu());
-#endif
 	}
 }
 
@@ -744,9 +558,6 @@ void MainWindow::applySettings()
 	m_tikzHighlighter->rehighlight();
 
 	m_openRecentAction->createRecentFilesList();
-#ifndef KTIKZ_USE_KDE
-	setToolBarStyle();
-#endif
 }
 
 void MainWindow::readSettings()
@@ -814,7 +625,6 @@ bool MainWindow::maybeSave()
 void MainWindow::loadUrl(const Url &url)
 {
 	// check whether the file can be opened
-#ifdef KTIKZ_USE_KDE
 	if (!url.isValid() || url.isEmpty())
 		return;
 
@@ -839,19 +649,6 @@ void MainWindow::loadUrl(const Url &url)
 		m_openRecentAction->removeUrl(url);
 		return;
 	}
-#else
-	const QString fileName = url.path();
-	QFile localFile(fileName);
-	if (!localFile.open(QFile::ReadOnly | QFile::Text))
-	{
-		QMessageBox::warning(this, KtikzApplication::applicationName(),
-		                     tr("Cannot read file \"%1\":\n%2.")
-		                     .arg(fileName)
-		                     .arg(localFile.errorString()));
-		m_openRecentAction->removeUrl(Url(fileName));
-		return;
-	}
-#endif
 
 	// only open a new window (if necessary) if the file can actually be opened
 	if (!m_tikzEditorView->editor()->document()->isEmpty())
@@ -885,7 +682,6 @@ bool MainWindow::saveUrl(const Url &url)
 	if (!url.isValid() || url.isEmpty())
 		return false;
 
-#ifdef KTIKZ_USE_KDE
 	const QString localFileName = url.isLocalFile() ? url.path() : m_tikzPreviewController->tempDir() + s_tempFileName;
 
 	KSaveFile localFile(localFileName);
@@ -895,18 +691,6 @@ bool MainWindow::saveUrl(const Url &url)
 		KMessageBox::error(this, tr("Cannot write file \"%1\":\n%2").arg(localFileName).arg(localFile.errorString()), tr("File Save Error", "@title:window"));
 		return false;
 	}
-#else
-	const QString fileName = url.path();
-	QFile localFile(fileName);
-	if (!localFile.open(QFile::WriteOnly | QFile::Text))
-	{
-		QMessageBox::warning(this, KtikzApplication::applicationName(),
-		                     tr("Cannot write file \"%1\":\n%2.")
-		                     .arg(fileName)
-		                     .arg(localFile.errorString()));
-		return false;
-	}
-#endif
 
 	QTextStream out(&localFile);
 	QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -914,17 +698,14 @@ bool MainWindow::saveUrl(const Url &url)
 	out.flush();
 	QApplication::restoreOverrideCursor();
 
-#ifdef KTIKZ_USE_KDE
 	if (!localFile.finalize())
 	{
 //		KMessageBox::error(this, i18nc("@info", "Cannot write file <filename>%1</filename>:<nl/><message>%2</message>", localFileName, localFile.errorString()), i18nc("@title:window", "File Save Error"));
 		KMessageBox::error(this, tr("Cannot write file \"%1\":\n%2").arg(localFileName).arg(localFile.errorString()), tr("File Save Error", "@title:window"));
 		return false;
 	}
-#endif
 	localFile.close();
 
-#ifdef KTIKZ_USE_KDE
 	if (!url.isLocalFile())
 	{
 		KIO::Job *job = KIO::file_copy(KUrl::fromPath(localFileName), url, -1, KIO::Overwrite | KIO::HideProgressInfo);
@@ -935,7 +716,6 @@ bool MainWindow::saveUrl(const Url &url)
 			return false;
 		}
 	}
-#endif
 
 	m_lastUrl = url;
 	setCurrentUrl(url);

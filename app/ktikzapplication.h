@@ -19,20 +19,11 @@
 #ifndef KTIKZAPPLICATION_H
 #define KTIKZAPPLICATION_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KApplication>
-#else
-#include <QApplication>
-#include <QStringList>
-#endif
 
 class MainWindow;
 
-#ifdef KTIKZ_USE_KDE
 class KtikzApplication : public KApplication
-#else
-class KtikzApplication : public QApplication
-#endif
 {
 	Q_OBJECT
 
@@ -43,16 +34,8 @@ public:
 	void init();
 	static QString applicationName();
 
-#ifndef KTIKZ_USE_KDE
-protected:
-	void commitData(QSessionManager &manager);
-	void saveState(QSessionManager &manager);
-#endif
 
 private:
-#ifndef KTIKZ_USE_KDE
-	QStringList m_args;
-#endif
 	bool m_firstTime;
 };
 

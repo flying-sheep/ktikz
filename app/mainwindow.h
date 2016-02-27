@@ -21,15 +21,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KXmlGuiWindow>
 class KUrl;
-#else
-#include <QMainWindow>
-class QUrl;
-class AboutDialog;
-class AssistantController;
-#endif
 #include <QDateTime>
 #include <QPointer>
 #include "../common/mainwidget.h"
@@ -56,11 +49,7 @@ class Url;
 /** Provides a tiny application for simple editing of TikZ graphics
  * @author Florian Hackenberger
  */
-#ifdef KTIKZ_USE_KDE
 class MainWindow : public KXmlGuiWindow, public MainWidget
-#else
-class MainWindow : public QMainWindow, public MainWidget
-#endif
 {
 	Q_OBJECT
 
@@ -83,11 +72,9 @@ signals:
 	void setSearchFromBegin(bool searchFromBegin);
 
 protected:
-#ifdef KTIKZ_USE_KDE
 	bool queryClose();
 	void readProperties(const KConfigGroup &group);
 	void saveProperties(KConfigGroup &group);
-#endif
 	void closeEvent(QCloseEvent *event);
 
 private slots:
@@ -101,26 +88,15 @@ private slots:
 	bool saveAs();
 	void reload();
 	void showTikzDocumentation();
-#ifndef KTIKZ_USE_KDE
-	void about();
-	void showDocumentation();
-#endif
 	void configure();
 	void applySettings();
 	void setDocumentModified(bool isModified);
 	void logUpdated();
-#ifdef KTIKZ_USE_KDE
 	void toggleWhatsThisMode();
-#endif
 	void showCursorPosition(int row, int col);
 
 private:
 	void createActions();
-#ifndef KTIKZ_USE_KDE
-	void createMenus();
-	void createToolBars();
-	void setToolBarStyle();
-#endif
 	void createCommandInsertWidget();
 	void createStatusBar();
 	void readSettings();
@@ -178,18 +154,9 @@ private:
 	QAction *m_configureAction;
 	QAction *m_showTikzDocAction;
 	QAction *m_whatsThisAction;
-#ifndef KTIKZ_USE_KDE
-	QAction *m_helpAction;
-	QAction *m_aboutAction;
-	QAction *m_aboutQtAction;
-#endif
 	QToolButton *m_shellEscapeButton;
 	bool m_useShellEscaping;
 
-#ifndef KTIKZ_USE_KDE
-	QPointer<AboutDialog> m_aboutDialog;
-	AssistantController *m_assistantController;
-#endif
 	QPointer<ConfigDialog> m_configDialog;
 
 	Url m_currentUrl;

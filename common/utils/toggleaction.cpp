@@ -21,7 +21,6 @@
 #include "action.h"
 #include "icon.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KActionCollection>
 
 ToggleAction::ToggleAction(QObject *parent, const QString &name)
@@ -44,30 +43,3 @@ ToggleAction::ToggleAction(const Icon &icon, const QString &text, QObject *paren
 	if (!name.isEmpty())
 		Action::actionCollection()->addAction(name, this);
 }
-#else
-ToggleAction::ToggleAction(QObject *parent, const QString &name)
-    : QAction(parent)
-{
-	init(name);
-}
-
-ToggleAction::ToggleAction(const QString &text, QObject *parent, const QString &name)
-    : QAction(text, parent)
-{
-	init(name);
-}
-
-ToggleAction::ToggleAction(const Icon &icon, const QString &text, QObject *parent, const QString &name)
-    : QAction(icon, text, parent)
-{
-	init(name);
-}
-
-void ToggleAction::init(const QString &name)
-{
-	if (!name.isEmpty())
-		setObjectName(name);
-
-	setCheckable(true);
-}
-#endif

@@ -19,7 +19,6 @@
 #ifndef KTIKZ_ICON_H
 #define KTIKZ_ICON_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KIcon>
 
 class Icon : public KIcon
@@ -29,20 +28,5 @@ public:
 	Icon(const QIcon &copy) : KIcon(copy) {}
 	Icon() : KIcon() {}
 };
-#else
-#include <QIcon>
-
-class Icon : public QIcon
-{
-public:
-#if QT_VERSION >= 0x040600
-	Icon(const QString &iconName) : QIcon(QIcon::fromTheme(iconName, QIcon(":/icons/" + iconName + ".png"))) {}
-#else
-	Icon(const QString &iconName) : QIcon(":/icons/" + iconName + ".png") {}
-#endif
-	Icon(const QIcon &copy) : QIcon(copy) {}
-	Icon() : QIcon() {}
-};
-#endif
 
 #endif

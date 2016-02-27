@@ -18,11 +18,7 @@
 
 #include "tikzpreview.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KLocale>
-#else
-#include <QLocale>
-#endif
 
 #include <QApplication>
 #include <QContextMenuEvent>
@@ -169,12 +165,8 @@ QToolBar *TikzPreview::toolBar()
 
 void TikzPreview::createInformationLabel()
 {
-#ifdef KTIKZ_USE_KDE
 	const QPixmap infoPixmap = KIconLoader::global()->loadIcon("dialog-error",
 	    KIconLoader::Dialog, KIconLoader::SizeMedium);
-#else
-	const QPixmap infoPixmap = Icon("dialog-error").pixmap(QSize(32, 32));
-#endif
 	m_infoPixmapLabel = new QLabel;
 	m_infoPixmapLabel->setPixmap(infoPixmap);
 
@@ -272,7 +264,6 @@ void TikzPreview::paintEvent(QPaintEvent *event)
 
 QString TikzPreview::formatZoomFactor(qreal zoomFactor) const
 {
-#ifdef KTIKZ_USE_KDE
 	QString zoomFactorText = KGlobal::locale()->formatNumber(zoomFactor, 2);
 	zoomFactorText.remove(KGlobal::locale()->decimalSymbol() + "00");
 	// remove trailing zero in numbers like 12.30
@@ -281,9 +272,6 @@ QString TikzPreview::formatZoomFactor(qreal zoomFactor) const
 		zoomFactorText.chop(1);
 	zoomFactorText += '%';
 	return zoomFactorText;
-#else
-	return QLocale::system().toString(zoomFactor) + '%';
-#endif
 }
 
 void TikzPreview::createZoomFactorList(qreal newZoomFactor)
@@ -355,11 +343,7 @@ void TikzPreview::setZoomFactor(qreal zoomFactor)
 
 void TikzPreview::setZoomFactor(const QString &zoomFactorText)
 {
-#ifdef KTIKZ_USE_KDE
 	setZoomFactor(KGlobal::locale()->readNumber(QString(zoomFactorText).remove('&').remove('%')) / 100.0);
-#else
-	setZoomFactor(QString(zoomFactorText).remove(QRegExp(QString("[^\\d\\%1]*").arg(QLocale::system().decimalPoint()))).toDouble() / 100);
-#endif
 }
 
 void TikzPreview::zoomIn()

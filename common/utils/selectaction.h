@@ -21,7 +21,6 @@
 
 class Icon;
 
-#ifdef KTIKZ_USE_KDE
 #include <KSelectAction>
 
 class SelectAction : public KSelectAction
@@ -33,38 +32,5 @@ public:
 	SelectAction(const QString &text, QObject *parent, const QString &name = 0);
 	SelectAction(const Icon &icon, const QString &text, QObject *parent, const QString &name = 0);
 };
-#else
-#include <QWidgetAction>
-
-class QComboBox;
-
-class SelectAction : public QWidgetAction
-{
-	Q_OBJECT
-
-public:
-	explicit SelectAction(QObject *parent, const QString &name = 0);
-	SelectAction(const QString &text, QObject *parent, const QString &name = 0);
-	SelectAction(const Icon &icon, const QString &text, QObject *parent, const QString &name = 0);
-	~SelectAction();
-
-	void setEditable(bool editable);
-	void removeAllActions();
-	void setItems(const QStringList &items);
-	void setCurrentItem(int index);
-	QStringList items() const;
-
-signals:
-	void triggered(const QString &text);
-
-private slots:
-	void setCurrentItem();
-
-private:
-	void init(const QString &name);
-
-	QComboBox *m_selectCombo;
-};
-#endif
 
 #endif

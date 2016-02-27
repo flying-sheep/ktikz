@@ -21,7 +21,6 @@
 #include "action.h"
 #include "icon.h"
 
-#ifdef KTIKZ_USE_KDE
 #include <KActionCollection>
 
 SelectAction::SelectAction(QObject *parent, const QString &name)
@@ -44,82 +43,3 @@ SelectAction::SelectAction(const Icon &icon, const QString &text, QObject *paren
 	if (!name.isEmpty())
 		Action::actionCollection()->addAction(name, this);
 }
-#else
-#include <QComboBox>
-#include <QLineEdit>
-#include <QWidgetAction>
-
-SelectAction::SelectAction(QObject *parent, const QString &name)
-    : QWidgetAction(parent)
-{
-	init(name);
-}
-
-SelectAction::SelectAction(const QString &text, QObject *parent, const QString &name)
-    : QWidgetAction(parent)
-{
-	init(name);
-	setText(text);
-}
-
-SelectAction::SelectAction(const Icon &icon, const QString &text, QObject *parent, const QString &name)
-    : QWidgetAction(parent)
-{
-	init(name);
-	setIcon(icon);
-	setText(text);
-}
-
-void SelectAction::init(const QString &name)
-{
-	if (!name.isEmpty())
-		setObjectName(name);
-
-	m_selectCombo = new QComboBox;
-	setDefaultWidget(m_selectCombo);
-	connect(m_selectCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(setCurrentItem()));
-}
-
-SelectAction::~SelectAction()
-{
-	delete m_selectCombo;
-}
-
-void SelectAction::setEditable(bool editable)
-{
-	m_selectCombo->setEditable(editable);
-	if (editable)
-		connect(m_selectCombo->lineEdit(), SIGNAL(returnPressed()), this, SLOT(setCurrentItem()));
-}
-
-void SelectAction::setCurrentItem()
-{
-	const QString text = m_selectCombo->lineEdit()->text();
-	emit triggered(text);
-}
-
-void SelectAction::removeAllActions()
-{
-	m_selectCombo->clear();
-}
-
-void SelectAction::setItems(const QStringList &items)
-{
-	m_selectCombo->clear();
-	m_selectCombo->addItems(items);
-}
-
-void SelectAction::setCurrentItem(int index)
-{
-	m_selectCombo->setCurrentIndex(index);
-	m_selectCombo->lineEdit()->setText(m_selectCombo->currentText());
-}
-
-QStringList SelectAction::items() const
-{
-	QStringList itemList;
-	for (int i = 0; i < m_selectCombo->count(); ++i)
-		itemList << m_selectCombo->itemText(i);
-	return itemList;
-}
-#endif

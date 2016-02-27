@@ -19,11 +19,7 @@
 #ifndef KTIKZ_CONFIGDIALOG_H
 #define KTIKZ_CONFIGDIALOG_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KPageDialog>
-#else
-#include <QDialog>
-#endif
 
 class QLabel;
 class QListWidgetItem;
@@ -34,11 +30,7 @@ class ConfigGeneralWidget;
 class ConfigEditorWidget;
 class ConfigAppearanceWidget;
 
-#ifdef KTIKZ_USE_KDE
 class ConfigDialog : public KPageDialog
-#else
-class ConfigDialog : public QDialog
-#endif
 {
 	Q_OBJECT
 
@@ -56,9 +48,6 @@ signals:
 	void settingsChanged();
 
 private:
-#ifndef KTIKZ_USE_KDE
-	QWidget *centerWidget();
-#endif
 	void addPage(QWidget *widget, const QString &title, const QString &iconName = 0);
 	QWidget *generalPage();
 	QWidget *editorPage();
@@ -69,19 +58,11 @@ private:
 //	QTabWidget *m_pagesTabWidget;
 //	QStringList m_pageTitles;
 
-#ifndef KTIKZ_USE_KDE
-	QList<QListWidgetItem*> m_pagesListWidgetItems;
-	QLabel *m_pagesTitleLabel;
-	QList<QWidget*> m_pageWidgets;
-#endif
 	ConfigGeneralWidget *m_configGeneralWidget;
 	ConfigEditorWidget *m_configEditorWidget;
 	ConfigAppearanceWidget *m_configAppearanceWidget;
 
 private slots:
-#ifndef KTIKZ_USE_KDE
-	void setCurrentPage(int page);
-#endif
 	void accept();
 };
 

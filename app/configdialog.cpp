@@ -18,14 +18,6 @@
 
 #include "configdialog.h"
 
-#ifndef KTIKZ_USE_KDE
-#include <QDialogButtonBox>
-#include <QGridLayout>
-#include <QListWidget>
-#include <QStackedWidget>
-//#include <QTabWidget>
-#include <QVBoxLayout>
-#endif
 #include <QKeyEvent>
 #include <QWhatsThis>
 
@@ -35,7 +27,6 @@
 #include "ktikzapplication.h"
 #include "../common/utils/icon.h"
 
-#ifdef KTIKZ_USE_KDE
 ConfigDialog::ConfigDialog(QWidget *parent) : KPageDialog(parent)
 {
 	setFaceType(List);
@@ -50,96 +41,6 @@ ConfigDialog::ConfigDialog(QWidget *parent) : KPageDialog(parent)
 	connect(this, SIGNAL(applyClicked()), this, SLOT(accept()));
 	connect(this, SIGNAL(okClicked()), this, SLOT(accept()));
 }
-#else
-ConfigDialog::ConfigDialog(QWidget *parent) : QDialog(parent)
-{
-	setWindowTitle(tr("Configure %1").arg(KtikzApplication::applicationName()));
-
-	addPage(generalPage(), tr("&General"), "preferences-desktop-theme");
-	addPage(editorPage(), tr("&Editor"), "accessories-text-editor");
-	addPage(appearancePage(), tr("&Highlighting"), "preferences-desktop-color");
-
-	QDialogButtonBox *buttonBox = new QDialogButtonBox;
-	QAction *whatsThisAction = QWhatsThis::createAction(this);
-	whatsThisAction->setIcon(Icon("help-contextual"));
-	QToolButton *whatsThisButton = new QToolButton(this);
-	whatsThisButton->setDefaultAction(whatsThisAction);
-	whatsThisButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
-	buttonBox->addButton(whatsThisButton, QDialogButtonBox::HelpRole);
-	buttonBox->addButton(QDialogButtonBox::Ok);
-	buttonBox->addButton(QDialogButtonBox::Cancel);
-	connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-	connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-
-	QVBoxLayout *mainLayout = new QVBoxLayout;
-	mainLayout->addWidget(centerWidget());
-	mainLayout->addWidget(buttonBox);
-	setLayout(mainLayout);
-}
-
-QWidget *ConfigDialog::centerWidget()
-{
-/*
-	m_pagesTabWidget = new QTabWidget;
-	for (int i = 0; i < m_pageWidgets.size(); ++i)
-		m_pagesTabWidget->addTab(m_pageWidgets.at(i), m_pageTitles.at(i));
-	return m_pagesTabWidget;
-*/
-	// create list
-	QListWidget *pagesListWidget = new QListWidget;
-	pagesListWidget->setViewMode(QListView::IconMode);
-	pagesListWidget->setMovement(QListView::Static);
-	pagesListWidget->setFlow(QListView::TopToBottom);
-	pagesListWidget->setWordWrap(true);
-	pagesListWidget->setUniformItemSizes(true);
-	pagesListWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-
-	// add items to list
-	QFontMetrics fm(qApp->font());
-	int iconWidth = 0;
-	for (int i = 0; i < m_pagesListWidgetItems.size(); ++i)
-		iconWidth = qMax(iconWidth, fm.boundingRect(0, 0, 0, 0, Qt::AlignCenter, m_pagesListWidgetItems.at(i)->text()).width());
-	iconWidth += 20;
-	const int iconHeight = fm.height() + 42;
-	for (int i = 0; i < m_pagesListWidgetItems.size(); ++i)
-	{
-		m_pagesListWidgetItems.at(i)->setSizeHint(QSize(iconWidth, iconHeight));
-		pagesListWidget->addItem(m_pagesListWidgetItems.at(i));
-	}
-	pagesListWidget->setFixedWidth(m_pagesListWidgetItems.at(0)->sizeHint().width() + 6);
-
-	// create title
-	QFrame *titleFrame = new QFrame(this);
-//	titleFrame->setAutoFillBackground(true);
-//	titleFrame->setFrameShape(QFrame::StyledPanel);
-	titleFrame->setFrameShape(QFrame::Box);
-//	titleFrame->setFrameShadow(QFrame::Plain);
-//	titleFrame->setBackgroundRole(QPalette::Base);
-	m_pagesTitleLabel = new QLabel(titleFrame);
-	m_pagesTitleLabel->setStyleSheet("QLabel { font-weight: bold; }");
-	QGridLayout *titleLayout = new QGridLayout(titleFrame);
-	titleLayout->setColumnStretch(0, 1);
-	titleLayout->setMargin(6);
-	titleLayout->addWidget(m_pagesTitleLabel);
-
-	// add pages
-	QStackedWidget *pagesStackedWidget = new QStackedWidget;
-	for (int i = 0; i < m_pageWidgets.size(); ++i)
-		pagesStackedWidget->addWidget(m_pageWidgets.at(i));
-	connect(pagesListWidget, SIGNAL(currentRowChanged(int)), pagesStackedWidget, SLOT(setCurrentIndex(int)));
-	connect(pagesListWidget, SIGNAL(currentRowChanged(int)), this, SLOT(setCurrentPage(int)));
-	pagesListWidget->setCurrentRow(0);
-
-	QWidget *mainWidget = new QWidget;
-	QGridLayout *mainLayout = new QGridLayout;
-	mainLayout->addWidget(pagesListWidget, 0, 0, 2, 1);
-	mainLayout->addWidget(titleFrame, 0, 1);
-	mainLayout->addWidget(pagesStackedWidget, 1, 1);
-	mainWidget->setLayout(mainLayout);
-
-	return mainWidget;
-}
-#endif
 
 void ConfigDialog::addPage(QWidget *widget, const QString &title, const QString &iconName)
 {
@@ -150,27 +51,12 @@ void ConfigDialog::addPage(QWidget *widget, const QString &title, const QString 
 */
 	QString title2 = title;
 	title2.remove('&');
-#ifdef KTIKZ_USE_KDE
 	KPageWidgetItem *page = new KPageWidgetItem(widget, title2);
 	page->setHeader(title2);
 	page->setIcon(KIcon(iconName));
 	KPageDialog::addPage(page);
-#else
-	QListWidgetItem *item = new QListWidgetItem(Icon(iconName), title2);
-	item->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-	m_pagesListWidgetItems << item;
-
-	m_pageWidgets << widget;
-#endif
 }
 
-#ifndef KTIKZ_USE_KDE
-void ConfigDialog::setCurrentPage(int page)
-{
-	m_pagesTitleLabel->setText(m_pagesListWidgetItems.at(page)->text());
-}
-#endif
 
 QWidget *ConfigDialog::generalPage()
 {

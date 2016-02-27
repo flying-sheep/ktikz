@@ -22,7 +22,6 @@
 class Icon;
 class Url;
 
-#ifdef KTIKZ_USE_KDE
 #include <KRecentFilesAction>
 
 class KActionCollection;
@@ -48,40 +47,5 @@ signals:
 private slots:
 	void selectUrl(const KUrl &url);
 };
-#else
-#include "action.h"
-
-class RecentFilesAction : public Action
-{
-	Q_OBJECT
-
-public:
-	RecentFilesAction(QObject *parent);
-	RecentFilesAction(const QString &text, QObject *parent);
-	RecentFilesAction(const Icon &icon, const QString &text, QObject *parent);
-	~RecentFilesAction();
-
-	void createRecentFilesList();
-	void loadEntries();
-	void saveEntries();
-	void addUrl(const QUrl &url, const QString &name = QString());
-	void removeUrl(const QUrl &url);
-
-signals:
-	void urlSelected(const Url &url);
-
-private slots:
-	void openRecentFile();
-
-private:
-	void createMenu();
-	void updateRecentFilesList();
-
-	QMenu *m_recentMenu;
-	QList<QAction*> m_recentFileActions;
-	QStringList m_recentFilesList;
-	int m_numOfRecentFiles;
-};
-#endif
 
 #endif

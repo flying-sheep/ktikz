@@ -34,12 +34,10 @@ ConfigGeneralWidget::ConfigGeneralWidget(QWidget *parent)
 {
 	ui.setupUi(this);
 
-#ifdef KTIKZ_USE_KDE
 	ui.historyLengthLabel->setVisible(false);
 	ui.historyLengthSpinBox->setVisible(false);
 	ui.toolBarStyleLabel->setVisible(false);
 	ui.toolBarStyleComboBox->setVisible(false);
-#endif
 
 	QCompleter *completer = new QCompleter(this);
 	completer->setModel(new QDirModel(completer));
@@ -66,9 +64,6 @@ void ConfigGeneralWidget::readSettings(const QString &settingsGroup)
 {
 	QSettings settings(ORGNAME, APPNAME);
 	settings.beginGroup(settingsGroup);
-#ifndef KTIKZ_USE_KDE
-	ui.historyLengthSpinBox->setValue(settings.value("RecentFilesNumber", 10).toInt());
-#endif
 	ui.commandsInDockCheck->setChecked(settings.value("CommandsInDock", false).toBool());
 	if (settings.value("BuildAutomatically", true).toBool())
 		ui.buildAutomaticallyRadio->setChecked(true);
@@ -81,20 +76,12 @@ void ConfigGeneralWidget::readSettings(const QString &settingsGroup)
 	ui.replaceEdit->setText(settings.value("TemplateReplaceText", "<>").toString());
 	settings.endGroup();
 
-#ifndef KTIKZ_USE_KDE
-	settings.beginGroup("MainWindow");
-	ui.toolBarStyleComboBox->setCurrentIndex(settings.value("ToolBarStyle", 0).toInt());
-	settings.endGroup();
-#endif
 }
 
 void ConfigGeneralWidget::writeSettings(const QString &settingsGroup)
 {
 	QSettings settings(ORGNAME, APPNAME);
 	settings.beginGroup(settingsGroup);
-#ifndef KTIKZ_USE_KDE
-	settings.setValue("RecentFilesNumber", ui.historyLengthSpinBox->value());
-#endif
 	settings.setValue("CommandsInDock", ui.commandsInDockCheck->isChecked());
 	settings.setValue("BuildAutomatically", ui.buildAutomaticallyRadio->isChecked());
 	TikzDocumentationController::storeTikzDocumentationPath(ui.tikzDocEdit->text());
@@ -104,11 +91,6 @@ void ConfigGeneralWidget::writeSettings(const QString &settingsGroup)
 	settings.setValue("TemplateReplaceText", ui.replaceEdit->text());
 	settings.endGroup();
 
-#ifndef KTIKZ_USE_KDE
-	settings.beginGroup("MainWindow");
-	settings.setValue("ToolBarStyle", ui.toolBarStyleComboBox->currentIndex());
-	settings.endGroup();
-#endif
 }
 
 void ConfigGeneralWidget::searchTikzDocumentation()

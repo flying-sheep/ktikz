@@ -18,11 +18,9 @@
  *   along with this program; if not, see <http://www.gnu.org/licenses/>.  *
  ***************************************************************************/
 
-#ifdef KTIKZ_USE_KDE
 #include <KAboutData>
 #include <KCmdLineArgs>
 #include <KUrl>
-#endif
 #include <QDir>
 #include <QFileInfo>
 #include <QLibraryInfo>
@@ -63,11 +61,7 @@ bool findTranslator(QTranslator *translator, const QString &transName, const QSt
 
 QTranslator *createTranslator(const QString &transName, const QString &transDir)
 {
-#ifdef KTIKZ_USE_KDE
 	const QString locale = KGlobal::locale()->language();
-#else
-	const QString locale = QString(QLocale::system().name());
-#endif
 	const QString localeShort = locale.left(2).toLower();
 
 	bool foundTranslator = false;
@@ -99,7 +93,6 @@ int main(int argc, char **argv)
 {
 	qInstallMsgHandler(debugOutput);
 
-#ifdef KTIKZ_USE_KDE
 	Q_INIT_RESOURCE(ktikz);
 
 	KAboutData aboutData("ktikz", "ktikz", ki18n("KTikZ"), APPVERSION);
@@ -116,17 +109,10 @@ int main(int argc, char **argv)
 	KCmdLineOptions options;
 	options.add("+[URL]", ki18n("TikZ document to open"));
 	KCmdLineArgs::addCmdLineOptions(options);
-#else
-	Q_INIT_RESOURCE(qtikz);
-#endif
 
 	KtikzApplication app(argc, argv);
 	QCoreApplication::setOrganizationName(ORGNAME);
 
-#ifndef KTIKZ_USE_KDE
-	QCoreApplication::setApplicationName(APPNAME);
-	QCoreApplication::setApplicationVersion(APPVERSION);
-#endif
 
 	const QString translationsDirPath = qgetenv("KTIKZ_TRANSLATIONS_DIR");
 	QTranslator *qtTranslator = createTranslator("qt", QLibraryInfo::location(QLibraryInfo::TranslationsPath));

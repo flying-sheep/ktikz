@@ -24,11 +24,7 @@
 
 namespace StandardAction
 {
-#ifdef KTIKZ_USE_KDE
 	Action *copyAction(KAction *action, const QObject *recvr, const char *slot);
-#else
-	Action *createAction(int which, const QObject *recvr, const char *slot, QObject *parent);
-#endif
 	Action *openNew(const QObject *recvr, const char *slot, QObject *parent);
 	Action *open(const QObject *recvr, const char *slot, QObject *parent);
 	RecentFilesAction *openRecent(const QObject *recvr, const char *slot, QObject *parent);

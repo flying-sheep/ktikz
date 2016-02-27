@@ -21,7 +21,6 @@
 
 class Icon;
 
-#ifdef KTIKZ_USE_KDE
 #include <KAction>
 
 class KActionCollection;
@@ -41,18 +40,5 @@ public:
 private:
 	static KActionCollection *m_actionCollection;
 };
-#else
-#include <QAction>
-
-class Action : public QAction
-{
-	Q_OBJECT
-
-public:
-	explicit Action(QObject *parent, const QString &name = 0);
-	Action(const QString &text, QObject *parent, const QString &name = 0);
-	Action(const Icon &icon, const QString &text, QObject *parent, const QString &name = 0);
-};
-#endif
 
 #endif

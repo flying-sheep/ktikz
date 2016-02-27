@@ -11,7 +11,6 @@
 #ifndef KTIKZ_LINEEDIT_H
 #define KTIKZ_LINEEDIT_H
 
-#ifdef KTIKZ_USE_KDE
 #include <KLineEdit>
 
 class LineEdit : public KLineEdit
@@ -22,31 +21,5 @@ public:
 	explicit LineEdit(const QString &text, QWidget *parent = 0);
 	LineEdit(QWidget *parent = 0);
 };
-#else
-#include <QLineEdit>
-
-class QToolButton;
-
-class LineEdit : public QLineEdit
-{
-	Q_OBJECT
-
-public:
-	explicit LineEdit(const QString &text, QWidget *parent = 0);
-	LineEdit(QWidget *parent = 0);
-	virtual QSize sizeHint() const;
-
-protected:
-	void resizeEvent(QResizeEvent *event);
-
-private slots:
-	void updateClearButton(const QString &text);
-
-private:
-	void init();
-
-	QToolButton *m_clearButton;
-};
-#endif
 
 #endif // LINEEDIT_H

@@ -18,7 +18,6 @@
 
 #include "url.h"
 
-#ifdef KTIKZ_USE_KDE
 Url::Url() : KUrl()
 {
 }
@@ -30,28 +29,3 @@ Url::Url(const QString &fileName) : KUrl(fileName)
 Url::Url(const KUrl &url) : KUrl(url)
 {
 }
-#else
-#include <QFileInfo>
-
-Url::Url() : QUrl()
-{
-}
-
-Url::Url(const QString &fileName) : QUrl(fileName)
-{
-}
-
-Url::Url(const QUrl &url) : QUrl(url)
-{
-}
-
-QString Url::fileName() const
-{
-	return QFileInfo(QUrl::path()).fileName();
-}
-
-QString Url::pathOrUrl() const
-{
-	return QUrl::path();
-}
-#endif
