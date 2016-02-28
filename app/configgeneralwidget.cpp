@@ -24,10 +24,10 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QSettings>
+#include <QIcon>
 
 #include "ktikzapplication.h"
 #include "tikzdocumentationcontroller.h"
-#include "../common/utils/icon.h"
 
 ConfigGeneralWidget::ConfigGeneralWidget(QWidget *parent)
     : QWidget(parent)
@@ -47,17 +47,18 @@ ConfigGeneralWidget::ConfigGeneralWidget(QWidget *parent)
 	ui.pdftopsEdit->setCompleter(completer);
 	ui.editorEdit->setCompleter(completer);
 
-	ui.tikzDocButton->setIcon(Icon("document-open"));
-	ui.latexButton->setIcon(Icon("document-open"));
-	ui.pdftopsButton->setIcon(Icon("document-open"));
-	ui.editorButton->setIcon(Icon("document-open"));
+	ui.tikzDocButton->setIcon(QIcon::fromTheme("document-open"));
+	ui.latexButton->setIcon(QIcon::fromTheme("document-open"));
+	ui.pdftopsButton->setIcon(QIcon::fromTheme("document-open"));
+	ui.editorButton->setIcon(QIcon::fromTheme("document-open"));
 
-	connect(ui.commandsInDockCheck, SIGNAL(toggled(bool)), this, SLOT(setCommandsInDock(bool)));
-	connect(ui.tikzDocButton, SIGNAL(clicked()), this, SLOT(browseCommand()));
-	connect(ui.tikzDocSearchButton, SIGNAL(clicked()), this, SLOT(searchTikzDocumentation()));
-	connect(ui.latexButton, SIGNAL(clicked()), this, SLOT(browseCommand()));
-	connect(ui.pdftopsButton, SIGNAL(clicked()), this, SLOT(browseCommand()));
-	connect(ui.editorButton, SIGNAL(clicked()), this, SLOT(browseCommand()));
+	auto browseC = static_cast<void (ConfigGeneralWidget::*)()>(&ConfigGeneralWidget::browseCommand);
+// 	connect(ui.commandsInDockCheck, &QCheckBox::toggled, this, &ConfigGeneralWidget::setCommandsInDock); //TODO
+	connect(ui.tikzDocButton, &QPushButton::clicked, this, browseC);
+	connect(ui.tikzDocSearchButton, &QPushButton::clicked, this, &ConfigGeneralWidget::searchTikzDocumentation);
+	connect(ui.latexButton, &QPushButton::clicked, this, browseC);
+	connect(ui.pdftopsButton, &QPushButton::clicked, this, browseC);
+	connect(ui.editorButton, &QPushButton::clicked, this, browseC);
 }
 
 void ConfigGeneralWidget::readSettings(const QString &settingsGroup)

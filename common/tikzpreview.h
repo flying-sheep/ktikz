@@ -20,19 +20,14 @@
 #define KTIKZ_TIKZPREVIEW_H
 
 #include <QGraphicsView>
+#include <QLabel>
+#include <KSelectAction>
+#include <QToolBar>
 
-class QComboBox;
-class QImage;
-class QLabel;
-class QToolBar;
+#include <poppler-qt5.h>
 
-namespace Poppler
-{
-	class Document;
-}
+#include "mainwidget.h"
 
-class Action;
-class SelectAction;
 class TikzPreviewThread;
 
 class TikzPreview : public QGraphicsView
@@ -40,7 +35,7 @@ class TikzPreview : public QGraphicsView
 	Q_OBJECT
 
 public:
-	TikzPreview(QWidget *parent = 0);
+	TikzPreview(MainWidget *mainWidget, QWidget *parent = 0);
 	~TikzPreview();
 
 	virtual QSize sizeHint() const;
@@ -61,7 +56,7 @@ protected:
 	void wheelEvent(QWheelEvent *event);
 
 private slots:
-	void setZoomFactor(const QString &zoomFactorText);
+	void resetZoomFactor();
 	void zoomIn();
 	void zoomOut();
 	void showPreviousPage();
@@ -78,6 +73,7 @@ private:
 	QString formatZoomFactor(qreal zoomFactor) const;
 	void createZoomFactorList(qreal newZoomFactor = 0);
 
+	MainWidget *m_mainWidget;
 	QGraphicsScene *m_tikzScene;
 	QGraphicsPixmapItem *m_tikzPixmapItem;
 	TikzPreviewThread *m_tikzPreviewThread;
@@ -86,10 +82,10 @@ private:
 
 	QAction *m_zoomInAction;
 	QAction *m_zoomOutAction;
-	SelectAction *m_zoomToAction;
+	KSelectAction *m_zoomToAction;
 	QAction *m_pageSeparator;
-	Action *m_previousPageAction;
-	Action *m_nextPageAction;
+	QAction *m_previousPageAction;
+	QAction *m_nextPageAction;
 
 	QFrame *m_infoWidget;
 	QGraphicsItem *m_infoProxyWidget;

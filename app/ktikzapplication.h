@@ -19,11 +19,9 @@
 #ifndef KTIKZAPPLICATION_H
 #define KTIKZAPPLICATION_H
 
-#include <KApplication>
+#include <QApplication>
 
-class MainWindow;
-
-class KtikzApplication : public KApplication
+class KtikzApplication : public QApplication
 {
 	Q_OBJECT
 

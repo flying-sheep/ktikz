@@ -18,6 +18,7 @@
 
 #include "tikzeditorview.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QMenu>
@@ -26,6 +27,10 @@
 #include <QSettings>
 #include <QTextCursor>
 #include <QToolBar>
+#include <QIcon>
+
+#include <KStandardAction>
+#include <KActionCollection>
 
 #include "editgotolinewidget.h"
 #include "editindentdialog.h"
@@ -33,13 +38,10 @@
 #include "editreplacecurrentwidget.h"
 #include "tikzeditor.h"
 //#include "tikzeditorhighlighter.h"
-#include "../common/utils/action.h"
-#include "../common/utils/icon.h"
-#include "../common/utils/standardaction.h"
 
 TikzEditorView::TikzEditorView(QWidget *parent) : QWidget(parent)
 {
-	m_parentWidget = parent;
+	m_parentWidget = static_cast<MainWindow*>(parent);
 
 	m_tikzEditor = new TikzEditor;
 	m_tikzEditor->setWhatsThis(tr("<p>Enter your TikZ code here.  "
@@ -74,40 +76,25 @@ TikzEditorView::TikzEditorView(QWidget *parent) : QWidget(parent)
 
 	createActions();
 
-	connect(m_tikzEditor->document(), SIGNAL(modificationChanged(bool)),
-	        this, SIGNAL(modificationChanged(bool)));
-	connect(m_tikzEditor->document(), SIGNAL(contentsChanged()),
-	        this, SIGNAL(contentsChanged()));
-	connect(m_tikzEditor, SIGNAL(cursorPositionChanged(int,int)),
-	        this, SIGNAL(cursorPositionChanged(int,int)));
-	connect(m_tikzEditor, SIGNAL(showStatusMessage(QString,int)),
-	        this, SIGNAL(showStatusMessage(QString,int)));
+	connect(m_tikzEditor->document(), &QTextDocument::modificationChanged, this, &TikzEditorView::modificationChanged);
+	connect(m_tikzEditor->document(), &QTextDocument::contentsChanged, this, &TikzEditorView::contentsChanged);
+	connect(m_tikzEditor, &TikzEditor::cursorPositionChanged, this, &TikzEditorView::cursorPositionChanged);
+	connect(m_tikzEditor, &TikzEditor::showStatusMessage, this, &TikzEditorView::showStatusMessage);
 
-	connect(m_tikzEditor, SIGNAL(focusIn()),
-	        this, SIGNAL(focusIn()));
-	connect(m_tikzEditor, SIGNAL(focusOut()),
-	        this, SIGNAL(focusOut()));
+	connect(m_tikzEditor, &TikzEditor::focusIn, this, &TikzEditorView::focusIn);
+	connect(m_tikzEditor, &TikzEditor::focusOut, this, &TikzEditorView::focusOut);
 
-	connect(m_replaceWidget, SIGNAL(search(QString,bool,bool,bool)),
-	        this, SLOT(search(QString,bool,bool,bool)));
-	connect(m_replaceWidget, SIGNAL(replace(QString,QString,bool,bool,bool)),
-	        this, SLOT(replace(QString,QString,bool,bool,bool)));
-	connect(m_replaceWidget, SIGNAL(focusEditor()),
-	        m_tikzEditor, SLOT(setFocus()));
+	connect(m_replaceWidget, &ReplaceWidget::searched, this, &TikzEditorView::search);
+	connect(m_replaceWidget, &ReplaceWidget::replaced, this, static_cast<void (TikzEditorView::*)(const QString&)>(&TikzEditorView::replace)); //TODO
+	connect(m_replaceWidget, &ReplaceWidget::focusEditor, m_tikzEditor, static_cast<void (TikzEditor::*)()>(&TikzEditor::setFocus));
 
-	connect(m_replaceCurrentWidget, SIGNAL(showReplaceWidget()),
-	        m_replaceWidget, SLOT(show()));
-	connect(m_replaceCurrentWidget, SIGNAL(search(QString,bool,bool,bool,bool)),
-	        this, SLOT(search(QString,bool,bool,bool,bool)));
-	connect(m_replaceCurrentWidget, SIGNAL(replace(QString)),
-	        this, SLOT(replace(QString)));
-	connect(m_replaceCurrentWidget, SIGNAL(replaceAll(QString,QString,bool,bool,bool,bool)),
-	        this, SLOT(replaceAll(QString,QString,bool,bool,bool,bool)));
-	connect(m_replaceCurrentWidget, SIGNAL(setSearchFromBegin(bool)),
-	        this, SIGNAL(setSearchFromBegin(bool)));
+	connect(m_replaceCurrentWidget, &ReplaceCurrentWidget::showReplaceWidget, m_replaceWidget, &ReplaceWidget::show);
+	connect(m_replaceCurrentWidget, &ReplaceCurrentWidget::searched, this, &TikzEditorView::search);
+	connect(m_replaceCurrentWidget, &ReplaceCurrentWidget::replaced, this, static_cast<void (TikzEditorView::*)(const QString&)>(&TikzEditorView::replace)); //TODO
+	connect(m_replaceCurrentWidget, &ReplaceCurrentWidget::replacedAll, this, &TikzEditorView::replaceAll);
+	connect(m_replaceCurrentWidget, &ReplaceCurrentWidget::setSearchFromBegin, this, &TikzEditorView::setSearchFromBegin);
 
-	connect(m_goToLineWidget, SIGNAL(goToLine(int)),
-	        this, SLOT(goToLine(int)));
+	connect(m_goToLineWidget, &GoToLineWidget::wentToLine, this, &TikzEditorView::goToLine);
 }
 
 TikzEditorView::~TikzEditorView()
@@ -128,12 +115,14 @@ void TikzEditorView::setFont(const QFont &editorFont)
 
 void TikzEditorView::createActions()
 {
-	m_undoAction = StandardAction::undo(m_tikzEditor, SLOT(undo()), this);
-	m_redoAction = StandardAction::redo(m_tikzEditor, SLOT(redo()), this);
-	m_cutAction = StandardAction::cut(m_tikzEditor, SLOT(cut()), this);
-	m_copyAction = StandardAction::copy(m_tikzEditor, SLOT(copy()), this);
-	m_pasteAction = StandardAction::paste(m_tikzEditor, SLOT(paste()), this);
-	m_selectAllAction = StandardAction::selectAll(m_tikzEditor, SLOT(selectAll()), this);
+	KActionCollection *ac = m_parentWidget->actionCollection();
+	
+	m_undoAction = KStandardAction::undo(m_tikzEditor, SLOT(undo()), ac);
+	m_redoAction = KStandardAction::redo(m_tikzEditor, SLOT(redo()), ac);
+	m_cutAction = KStandardAction::cut(m_tikzEditor, SLOT(cut()), ac);
+	m_copyAction = KStandardAction::copy(m_tikzEditor, SLOT(copy()), ac);
+	m_pasteAction = KStandardAction::paste(m_tikzEditor, SLOT(paste()), ac);
+	m_selectAllAction = KStandardAction::selectAll(m_tikzEditor, SLOT(selectAll()), ac);
 	m_undoAction->setStatusTip(tr("Undo the previous action"));
 	m_redoAction->setStatusTip(tr("Redo the previous undone action"));
 	m_cutAction->setStatusTip(tr("Cut the current selection's contents to the clipboard"));
@@ -147,37 +136,37 @@ void TikzEditorView::createActions()
 	m_pasteAction->setWhatsThis(tr("<p>Paste the clipboard's contents into the current selection.</p>"));
 	m_selectAllAction->setWhatsThis(tr("<p>Select all the content.</p>"));
 
-	Action *action;
-	action = new Action(Icon("format-indent-more"), tr("&Indent..."), this, "edit_indent");
-	action->setShortcut(tr("Ctrl+I", "Edit|Indent"));
+	QAction *action;
+	action = ac->addAction("edit_indent", new QAction(QIcon::fromTheme("format-indent-more"), tr("&Indent..."), this));
+	ac->setDefaultShortcut(action, tr("Ctrl+I", "Edit|Indent"));
 	action->setStatusTip(tr("Indent the current line or selection"));
 	action->setWhatsThis(tr("<p>Indent the current line or selection.</p>"));
-	connect(action, SIGNAL(triggered()), this, SLOT(editIndent()));
+	connect(action, &QAction::triggered, this, &TikzEditorView::editIndent);
 	m_editActions.append(action);
 
-	action = new Action(tr("C&omment"), this, "edit_comment");
-	action->setShortcut(tr("Ctrl+D", "Edit|Comment"));
+	action = ac->addAction("edit_comment", new QAction(tr("C&omment"), this));
+	ac->setDefaultShortcut(action, tr("Ctrl+D", "Edit|Comment"));
 	action->setStatusTip(tr("Comment the current line or selection"));
 	action->setWhatsThis(tr("<p>Comment the current line or selection.</p>"));
-	connect(action, SIGNAL(triggered()), this, SLOT(editComment()));
+	connect(action, &QAction::triggered, this, &TikzEditorView::editComment);
 	m_editActions.append(action);
 
-	action = new Action(tr("Unco&mment"), this, "edit_uncomment");
-	action->setShortcut(tr("Ctrl+Shift+D", "Edit|Uncomment"));
+	action = ac->addAction("edit_uncomment", new QAction(tr("Unco&mment"), this));
+	ac->setDefaultShortcut(action, tr("Ctrl+Shift+D", "Edit|Uncomment"));
 	action->setStatusTip(tr("Uncomment the current line or selection"));
 	action->setWhatsThis(tr("<p>Uncomment the current line or selection.</p>"));
-	connect(action, SIGNAL(triggered()), this, SLOT(editUncomment()));
+	connect(action, &QAction::triggered, this, &TikzEditorView::editUncomment);
 	m_editActions.append(action);
 
-	action = new Action(this);
+	action = new QAction(this);
 	action->setSeparator(true);
 	m_editActions.append(action);
 
-	m_editActions.append(StandardAction::find(this, SLOT(editFind()), this));
-	m_editActions.append(StandardAction::findNext(this, SLOT(editFindNext()), this));
-	m_editActions.append(StandardAction::findPrev(this, SLOT(editFindPrevious()), this));
-	m_editActions.append(StandardAction::replace(this, SLOT(editReplace()), this));
-	m_editActions.append(StandardAction::gotoLine(this, SLOT(editGoToLine()), this));
+	m_editActions.append(KStandardAction::find(this, SLOT(editFind()), ac));
+	m_editActions.append(KStandardAction::findNext(this, SLOT(editFindNext()), ac));
+	m_editActions.append(KStandardAction::findPrev(this, SLOT(editFindPrevious()), ac));
+	m_editActions.append(KStandardAction::replace(this, SLOT(editReplace()), ac));
+	m_editActions.append(KStandardAction::gotoLine(this, SLOT(editGoToLine()), ac));
 	m_editActions.at(4)->setStatusTip(tr("Look up a piece of text in the document"));
 	m_editActions.at(5)->setStatusTip(tr("Search the next occurrence of a text"));
 	m_editActions.at(6)->setStatusTip(tr("Search the previous occurrence of a text"));
@@ -195,16 +184,11 @@ void TikzEditorView::createActions()
 	m_copyAction->setEnabled(false);
 	m_pasteAction->setEnabled(m_tikzEditor->canPaste());
 
-	connect(m_tikzEditor, SIGNAL(undoAvailable(bool)),
-	        m_undoAction, SLOT(setEnabled(bool)));
-	connect(m_tikzEditor, SIGNAL(redoAvailable(bool)),
-	        m_redoAction, SLOT(setEnabled(bool)));
-	connect(m_tikzEditor, SIGNAL(copyAvailable(bool)),
-	        m_cutAction, SLOT(setEnabled(bool)));
-	connect(m_tikzEditor, SIGNAL(copyAvailable(bool)),
-	        m_copyAction, SLOT(setEnabled(bool)));
-	connect(QApplication::clipboard(), SIGNAL(dataChanged()),
-	        this, SLOT(setPasteEnabled()));
+	connect(m_tikzEditor, &QPlainTextEdit::undoAvailable, m_undoAction, &QAction::setEnabled);
+	connect(m_tikzEditor, &QPlainTextEdit::redoAvailable, m_redoAction, &QAction::setEnabled);
+	connect(m_tikzEditor, &QPlainTextEdit::copyAvailable, m_cutAction, &QAction::setEnabled);
+	connect(m_tikzEditor, &QPlainTextEdit::copyAvailable, m_copyAction, &QAction::setEnabled);
+	connect(QApplication::clipboard(), &QClipboard::dataChanged, this, &TikzEditorView::setPasteEnabled);
 }
 
 QMenu *TikzEditorView::menu()
@@ -251,9 +235,9 @@ void TikzEditorView::applySettings()
 	m_tikzEditor->setShowWhiteSpaces(settings.value("ShowWhiteSpaces", false).toBool());
 	m_tikzEditor->setShowTabulators(settings.value("ShowTabulators", false).toBool());
 	m_tikzEditor->setShowMatchingBrackets(settings.value("ShowMatchingBrackets", true).toBool());
-	m_tikzEditor->setWhiteSpacesColor(settings.value("ColorWhiteSpaces", Qt::gray).value<QColor>());
-	m_tikzEditor->setTabulatorsColor(settings.value("ColorTabulators", Qt::gray).value<QColor>());
-	m_tikzEditor->setMatchingColor(settings.value("ColorMatchingBrackets", Qt::yellow).value<QColor>());
+	m_tikzEditor->setWhiteSpacesColor(settings.value("ColorWhiteSpaces", QColor(Qt::gray)).value<QColor>());
+	m_tikzEditor->setTabulatorsColor(settings.value("ColorTabulators", QColor(Qt::gray)).value<QColor>());
+	m_tikzEditor->setMatchingColor(settings.value("ColorMatchingBrackets", QColor(Qt::yellow)).value<QColor>());
 	settings.endGroup();
 
 /*

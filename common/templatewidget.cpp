@@ -28,32 +28,32 @@
 #include <QProcess>
 #include <QSettings>
 
-#include "utils/filedialog.h"
-#include "utils/icon.h"
-#include "utils/lineedit.h"
-#include "utils/url.h"
+#include <QFileDialog>
+#include <QIcon>
+#include <KLineEdit>
+#include <QUrl>
 
 TemplateWidget::TemplateWidget(QWidget *parent) : QWidget(parent)
 {
 	ui.setupUi(this);
-	ui.templateCombo->setLineEdit(new LineEdit(this));
+	ui.templateCombo->setLineEdit(new KLineEdit(this));
 	ui.templateCombo->setMinimumContentsLength(20);
-	ui.templateChooseButton->setIcon(Icon("document-open"));
-	ui.templateReloadButton->setIcon(Icon("view-refresh"));
+	ui.templateChooseButton->setIcon(QIcon::fromTheme("document-open"));
+	ui.templateReloadButton->setIcon(QIcon::fromTheme("view-refresh"));
 
 	QCompleter *completer = new QCompleter(this);
 	completer->setModel(new QDirModel(completer));
 	completer->setCompletionMode(QCompleter::PopupCompletion);
 	ui.templateCombo->setCompleter(completer);
 
-	connect(ui.templateChooseButton, SIGNAL(clicked()),
-	        this, SLOT(setTemplateFile()));
-	connect(ui.templateEditButton, SIGNAL(clicked()),
-	        this, SLOT(editTemplateFile()));
-	connect(ui.templateReloadButton, SIGNAL(clicked()),
-	        this, SLOT(reloadTemplateFile()));
-	connect(ui.templateCombo->lineEdit(), SIGNAL(textChanged(QString)),
-	        this, SIGNAL(fileNameChanged(QString)));
+	connect(ui.templateChooseButton, &QToolButton::clicked,
+			this, &TemplateWidget::setTemplateFile);
+	connect(ui.templateEditButton, &QToolButton::clicked,
+			this, &TemplateWidget::editTemplateFile);
+	connect(ui.templateReloadButton, &QToolButton::clicked,
+			this, &TemplateWidget::reloadTemplateFile);
+	connect(ui.templateCombo->lineEdit(), &QLineEdit::textChanged,
+			this, &TemplateWidget::fileNameChanged);
 
 	readRecentTemplates();
 }
@@ -85,15 +85,15 @@ void TemplateWidget::saveRecentTemplates()
 
 void TemplateWidget::setFileName(const QString &fileName)
 {
-	disconnect(ui.templateCombo->lineEdit(), SIGNAL(textChanged(QString)),
-	        this, SIGNAL(fileNameChanged(QString)));
+	disconnect(ui.templateCombo->lineEdit(), &QLineEdit::textChanged,
+		this, &TemplateWidget::fileNameChanged);
 	const int index = ui.templateCombo->findText(fileName);
 	if (index >= 0) // then remove item in order to re-add it at the top
 		ui.templateCombo->removeItem(index);
 	ui.templateCombo->insertItem(0, fileName);
 	ui.templateCombo->lineEdit()->setText("");
-	connect(ui.templateCombo->lineEdit(), SIGNAL(textChanged(QString)),
-	        this, SIGNAL(fileNameChanged(QString)));
+	connect(ui.templateCombo->lineEdit(), &QLineEdit::textChanged,
+		this, &TemplateWidget::fileNameChanged);
 	ui.templateCombo->setCurrentIndex(0);
 }
 
@@ -135,13 +135,13 @@ void TemplateWidget::setTemplateFile()
 	if (currentFileName.isEmpty() && QFileInfo(KTIKZ_TEMPLATES_INSTALL_DIR).isDir())
 		currentFileName = KTIKZ_TEMPLATES_INSTALL_DIR;
 #endif
-	const Url url = FileDialog::getOpenUrl(this,
-	    tr("Select a template file"), Url(currentFileName),
-	    QString("*.pgs *.tex|%1\n*|%2")
-	    .arg(tr("%1 template files").arg(APPNAME))
-	    .arg(tr("All files")));
+	const QUrl url = QFileDialog::getOpenFileUrl(this,
+		tr("Select a template file"), QUrl::fromUserInput(currentFileName),
+		QString("*.pgs *.tex|%1\n*|%2")
+			.arg(tr("%1 template files").arg(APPNAME))
+			.arg(tr("All files")));
 	if (url.isValid())
-		setFileName(url.pathOrUrl());
+		setFileName(url.url(QUrl::PreferLocalFile));
 }
 
 void TemplateWidget::editTemplateFile()

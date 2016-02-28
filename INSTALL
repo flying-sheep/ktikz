@@ -3,11 +3,11 @@ The following are required for compilation:
   headers, ...)
 - cmake (if you want to install the KPart)
 - a standard LaTeX environment
-- a Qt 4 development environment (libraries, headers, qmake, ...): only
-  QtCore, QtGui and QtXml are required, at least in version 4.4
+- a Qt 5 development environment (libraries, headers, qmake, ...): only
+  QtCore, QtGui and QtXml are required
 - the poppler-qt4 libraries and headers
 - the kdelibs development environment (only if you want KDE integration
-  and the KPart), at least in version 4.3
+  and the KPart)
 - the LaTeX pgf package (which includes TikZ)
 - the LaTeX preview package
 
@@ -21,27 +21,6 @@ In Ubuntu you would obtain those by installing the following packages:
 - pgf
 - preview-latex-style
 
-Install the Qt-only (qtikz) application (using qmake):
-------------------------------------------------------
-
-1. Edit the paths in conf.pri
-2. Run the following commands (this will create an executable named qtikz):
-  mkdir buildqt
-  cd buildqt
-  qmake ../qtikz.pro
-  make
-  sudo make install
-  sudo update-mime-database /usr/share/mime
-
-Note that qmake will tell you where the files will be installed. If
-you don't like the installation directories, you can change them in
-the file conf.pri before running make.  Make sure to make the changes
-in conf.pri before running make.
-
-In order to uninstall qtikz run the following commands in the build directory:
-  sudo make uninstall
-  sudo update-mime-database /usr/share/mime
-
 Install the KDE (ktikz) application and the KPart (using cmake):
 ----------------------------------------------------------------
 
@@ -50,13 +29,13 @@ and a KPart which will be loaded when clicking a *.pgf or *.tikz file
 in Konqueror):
   mkdir build
   cd build
-  cmake -DCMAKE_INSTALL_PREFIX=`kde4-config --prefix` ..
+  cmake -DCMAKE_INSTALL_PREFIX=/usr ..
   make
   sudo make install
 
 Because a new mimetype (text/x-pgf) is added to the system, as a user one
 may additionally have to run
-  kbuildsycoca4
+  kbuildsycoca5
 or restart KDE so that konqueror uses the KPart for this mimetype.
 
 In order to uninstall ktikz run the following commands in the build directory

@@ -18,16 +18,14 @@
 
 #include "ktikzapplication.h"
 
-#include <KCmdLineArgs>
-#include <KUrl>
+#include <QCommandLineParser>
+#include <QUrl>
 
 #include "mainwindow.h"
 
 KtikzApplication::KtikzApplication(int &argc, char **argv)
-    : KApplication()
+    : QApplication(argc, argv)
 {
-	Q_UNUSED(argc);
-	Q_UNUSED(argv);
 	m_firstTime = true;
 }
 
@@ -42,15 +40,16 @@ void KtikzApplication::init()
 	MainWindow *mainWindow = new MainWindow;
 	mainWindow->show();
 
-	KUrl url;
-	KCmdLineArgs *args = KCmdLineArgs::parsedArgs();
-	if (args->count() > 0)
+	QUrl url;
+	QCommandLineParser parser;
+	parser.process(*this);
+	const QStringList args = parser.positionalArguments();
+	if (args.count() > 0)
 	{
-		url = args->url(0);
+		url = QUrl(args.at(0));
 		if (url.isValid() && url.isLocalFile())
 			mainWindow->loadUrl(url);
 	}
-	args->clear();
 }
 
 KtikzApplication::~KtikzApplication()

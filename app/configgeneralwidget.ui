@@ -204,7 +204,7 @@
       <item row="0" column="1">
        <layout class="QHBoxLayout" name="latexHorizontalLayout">
         <item>
-         <widget class="LineEdit" name="latexEdit">
+         <widget class="KLineEdit" name="latexEdit">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -248,7 +248,7 @@
       <item row="1" column="1">
        <layout class="QHBoxLayout" name="pdftopsHorizontalLayout">
         <item>
-         <widget class="LineEdit" name="pdftopsEdit">
+         <widget class="KLineEdit" name="pdftopsEdit">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -299,7 +299,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="LineEdit" name="replaceEdit">
+       <widget class="KLineEdit" name="replaceEdit">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -327,7 +327,7 @@
       <item row="1" column="1">
        <layout class="QHBoxLayout" name="editorHorizontalLayout">
         <item>
-         <widget class="LineEdit" name="editorEdit">
+         <widget class="KLineEdit" name="editorEdit">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -386,7 +386,7 @@
       <item row="0" column="1">
        <layout class="QHBoxLayout" name="tikzDocHorizontalLayout">
         <item>
-         <widget class="LineEdit" name="tikzDocEdit">
+         <widget class="KLineEdit" name="tikzDocEdit">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -468,13 +468,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>LineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>../common/utils/lineedit.h</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="application.qrc"/>
  </resources>

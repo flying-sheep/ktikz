@@ -36,17 +36,18 @@
  ***************************************************************************/
 
 #include "part.h"
+#include <QMimeDatabase>
 
 #include <KAboutData>
-#include <KAction>
+#include <QAction>
 #include <KActionCollection>
 #include <KDirWatch>
-#include <KFileDialog>
+#include <QFileDialog>
 #include <KMessageBox>
 #include <KIO/Job>
 //#include <KIO/JobUiDelegate>
-#include <KIO/NetAccess>
-#include <KParts/GenericFactory>
+#include <KPluginFactory>
+#include <KParts/Part>
 #include <QSettings>
 #include <QTimer>
 
@@ -55,10 +56,10 @@
 #include "../common/templatewidget.h"
 #include "../common/tikzpreview.h"
 #include "../common/tikzpreviewcontroller.h"
-#include "../common/utils/action.h"
 
-K_PLUGIN_FACTORY(ktikzPartFactory, registerPlugin<Part>();)
-K_EXPORT_PLUGIN(ktikzPartFactory("ktikz","ktikz") )
+K_PLUGIN_FACTORY_WITH_JSON(KTikzPartFactory, "ktikzpart.json", registerPlugin<Part>();)
+
+#include <part.moc>
 
 Part::Part(QWidget *parentWidget, QObject *parent, const QVariantList &args)
     : KParts::ReadOnlyPart(parent)
@@ -69,7 +70,6 @@ Part::Part(QWidget *parentWidget, QObject *parent, const QVariantList &args)
 
 //	setObjectName("ktikz#");
 
-	Action::setActionCollection(actionCollection());
 	m_tikzPreviewController = new TikzPreviewController(this);
 
 	QWidget *mainWidget = new QWidget(parentWidget);
@@ -85,10 +85,10 @@ Part::Part(QWidget *parentWidget, QObject *parent, const QVariantList &args)
 
 	// document watcher and reloader
 	m_watcher = new KDirWatch(this);
-	connect(m_watcher, SIGNAL(dirty(const QString&)), this, SLOT(slotFileDirty(const QString&)));
+	connect(m_watcher, &KDirWatch::dirty, this, &Part::slotFileDirty);
 	m_dirtyHandler = new QTimer(this);
 	m_dirtyHandler->setSingleShot(true);
-	connect(m_dirtyHandler, SIGNAL(timeout()),this, SLOT(slotDoFileDirty()));
+	connect(m_dirtyHandler, &QTimer::timeout,this, &Part::slotDoFileDirty);
 
 	setXMLFile("ktikzpart/ktikzpart.rc");
 
@@ -100,6 +100,11 @@ Part::~Part()
 	delete m_tikzPreviewController;
 }
 
+KActionCollection *Part::actionCollection() const
+{
+	return KParts::ReadOnlyPart::actionCollection();
+}
+
 QWidget *Part::widget()
 {
 	return KParts::ReadOnlyPart::widget();
@@ -107,36 +112,35 @@ QWidget *Part::widget()
 
 KAboutData *Part::createAboutData()
 {
-	KAboutData *aboutData = new KAboutData("ktikzpart", "ktikz",
-	    ki18n("KTikZ KPart"), APPVERSION);
-	aboutData->setShortDescription(ki18n("A TikZ Viewer"));
-	aboutData->setLicense(KAboutData::License_GPL_V2);
-	aboutData->setCopyrightStatement(ki18n("Copyright 2007-2010 Florian Hackenberger, Glad Deschrijver"));
-	aboutData->setOtherText(ki18n("This is a plugin for viewing TikZ (from the LaTeX pgf package) diagrams."));
+	KAboutData *aboutData = new KAboutData("ktikzpart", i18n("KTikZ KPart"), APPVERSION);
+	aboutData->setShortDescription(i18n("A TikZ Viewer"));
+	aboutData->setLicense(KAboutLicense::GPL_V2);
+	aboutData->setCopyrightStatement(i18n("Copyright 2007-2010 Florian Hackenberger, Glad Deschrijver"));
+	aboutData->setOtherText(i18n("This is a plugin for viewing TikZ (from the LaTeX pgf package) diagrams."));
 	aboutData->setBugAddress("florian@hackenberger.at");
-	aboutData->addAuthor(ki18n("Florian Hackenberger"), ki18n("Maintainer"), "florian@hackenberger.at");
-	aboutData->addAuthor(ki18n("Glad Deschrijver"), ki18n("Developer"), "glad.deschrijver@gmail.com");
+	aboutData->addAuthor(i18n("Florian Hackenberger"), i18n("Maintainer"), "florian@hackenberger.at");
+	aboutData->addAuthor(i18n("Glad Deschrijver"), i18n("Developer"), "glad.deschrijver@gmail.com");
 	return aboutData;
 }
 
 void Part::createActions()
 {
 	// File
-	m_saveAsAction = actionCollection()->addAction(KStandardAction::SaveAs, this, SLOT(saveAs()));
+	m_saveAsAction = KStandardAction::saveAs(this, SLOT(saveAs()), actionCollection());
 	m_saveAsAction->setWhatsThis(i18nc("@info:whatsthis", "<para>Save the document under a new name.</para>"));
 
 /*
-	KAction *reloadAction = actionCollection()->add<KAction>("file_reload");
+	Q Action *reloadAction = actionCollection()->add<QAction*>("file_reload");
 	reloadAction->setText(i18nc("@action", "Reloa&d"));
-	reloadAction->setIcon(KIcon("view-refresh"));
+	reloadAction->setIcon(QIcon::fromTheme("view-refresh"));
 	reloadAction->setWhatsThis(i18nc("@info:whatsthis", "Reload the current document from disk."));
-	connect(reloadAction, SIGNAL(triggered()), this, SLOT(slotReload()));
+	connect(reloadAction, &QAction::triggered, this, SLOT(slotReload()));
 	reloadAction->setShortcut(KStandardShortcut::reload());
 	m_reloadAction = reloadAction;
 */
 
 	// Configure
-	KAction *action = KStandardAction::preferences(this, SLOT(configure()), actionCollection());
+	QAction *action = actionCollection()->addAction("options_configure", KStandardAction::preferences(this, SLOT(configure()), this));
 	action->setText(i18nc("@action", "Configure KTikZ Viewer..."));
 }
 
@@ -174,21 +178,23 @@ bool Part::openFile()
 
 void Part::saveAs()
 {
-	const KUrl srcUrl = url();
+	const QUrl srcUrl = url();
 
-	const KMimeType::Ptr mimeType = KMimeType::mimeType("text/x-pgf");
-	const QString tikzFilter = (mimeType) ?
-	    mimeType->patterns().join(" ") + '|' + mimeType->comment()
-	    : "*.pgf *.tikz *.tex|" + i18nc("@item:inlistbox filter", "TikZ files");
-	const KUrl dstUrl = KFileDialog::getSaveUrl(srcUrl,
-	    tikzFilter + "\n*|" + i18nc("@item:inlistbox filter", "All files"),
-	    widget(), i18nc("@title:window", "Save TikZ Source File As"),
-	    KFileDialog::ConfirmOverwrite);
+	QMimeDatabase db;
+	const QMimeType mimeType = db.mimeTypeForName("text/x-pgf");
+	const QString tikzFilter = (mimeType.isValid()) ?
+		QString(mimeType.globPatterns().join(" ") + '|' + mimeType.comment())
+		: ("*.pgf *.tikz *.tex|" + i18nc("@item:inlistbox filter", "TikZ files"));
+	const QUrl dstUrl = QFileDialog::getSaveFileUrl(
+		widget(),
+		i18nc("@title:window", "Save TikZ Source File As"),
+		srcUrl,
+		tikzFilter + "\n*|" + i18nc("@item:inlistbox filter", "All files"));
 	if (!dstUrl.isValid())
 		return;
 
 	KIO::Job *job = KIO::file_copy(srcUrl, dstUrl, -1, KIO::Overwrite | KIO::HideProgressInfo);
-	connect(job, SIGNAL(result(KJob*)), m_tikzPreviewController, SLOT(showJobError(KJob*)));
+	connect(job, &KIO::Job::result, m_tikzPreviewController, &TikzPreviewController::showJobError);
 }
 
 bool Part::closeUrl()
@@ -237,7 +243,7 @@ QString Part::tikzCode() const
 	return m_tikzCode;
 }
 
-Url Part::url() const
+QUrl Part::url() const
 {
 	return KParts::ReadOnlyPart::url();
 }
@@ -312,7 +318,7 @@ void Part::configure()
 	if (m_configDialog == 0)
 	{
 		m_configDialog = new PartConfigDialog(widget());
-		connect(m_configDialog, SIGNAL(settingsChanged(QString)), this, SLOT(applySettings()));
+		connect(m_configDialog, &PartConfigDialog::settingsChanged, this, &Part::applySettings);
 	}
 	m_configDialog->readSettings();
 	m_configDialog->show();

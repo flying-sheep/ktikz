@@ -21,26 +21,19 @@
 
 #include <QString>
 #include <QWidget>
+#include <QUrl>
 
-#include "utils/url.h"
+#include <kactioncollection.h>
 
 class MainWidget
 {
 public:
 	virtual ~MainWidget() {}
 
-	virtual QWidget *widget()
-	{
-		return new QWidget();
-	}
-	virtual QString tikzCode() const
-	{
-		return QString();
-	}
-	virtual Url url() const
-	{
-		return Url();
-	}
+	virtual QWidget *widget() = 0;
+	virtual KActionCollection *actionCollection() const = 0;
+	virtual QString tikzCode() const = 0;
+	virtual QUrl url() const = 0;
 };
 
 #endif

@@ -54,7 +54,7 @@ AboutDialog::AboutDialog(QWidget *parent)
 	    "See the GNU General Public License for more details.</p>"));
 	textEdit->setReadOnly(true);
 	QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-	connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+	connect(buttonBox, &QDialogButtonBox::accepted, this, &AboutDialog::accept);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	mainLayout->addWidget(topWidget);

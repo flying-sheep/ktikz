@@ -19,14 +19,13 @@
 #ifndef KTIKZ_TIKZPREVIEWCONTROLLER_H
 #define KTIKZ_TIKZPREVIEWCONTROLLER_H
 
-#include <QObject>
+#include <kjob.h>
+#include <ktoggleaction.h>
 
-#include <KUrl>
-class KAction;
-class KActionCollection;
-class KJob;
-class KTempDir;
-class KToggleAction;
+#include <QObject>
+#include <QTemporaryDir>
+#include <QAction>
+#include <QUrl>
 
 class TemplateWidget;
 class TikzPreview;
@@ -50,12 +49,12 @@ public:
 	void applySettings();
 
 public slots:
+	void showJobError(KJob *job);
 	void generatePreview();
 	void regeneratePreview();
 
 private slots:
-	void showJobError(KJob *job);
-	void setTemplateFileAndRegenerate(const QString &path);
+	bool setTemplateFileAndRegenerate(const QString &path);
 	void setReplaceTextAndRegenerate(const QString &replace);
 	void exportImage();
 	void setExportActionsEnabled(bool enabled);
@@ -71,7 +70,7 @@ private:
 
 	void createActions();
 	bool setTemplateFile(const QString &path);
-	KUrl getExportUrl(const KUrl &url, const QString &mimeType) const;
+	QUrl getExportUrl(const QUrl &url, const QString &mimeName) const;
 	void generatePreview(bool templateChanged);
 	bool cleanUp();
 
@@ -82,12 +81,12 @@ private:
 	TikzPreview *m_tikzPreview;
 	TikzPreviewGenerator *m_tikzPreviewGenerator;
 
-	KActionCollection *m_actionCollection;
-	KAction *m_exportAction;
-	KAction *m_procStopAction;
+	QList<QAction> *m_actionCollection;
+	QAction *m_exportAction;
+	QAction *m_procStopAction;
 	KToggleAction *m_shellEscapeAction;
 
-	KTempDir *m_tempDir;
+	QTemporaryDir *m_tempDir;
 	QString m_tempTikzFileBaseName;
 };
 

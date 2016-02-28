@@ -10,7 +10,7 @@ QT += xml
 
 win32:INCLUDEPATH += $${_PRO_FILE_PWD_} $${_PRO_FILE_PWD_}/../poppler-win32
 win32:LIBS += -L$${_PRO_FILE_PWD_}/../poppler-win32/
-LIBS += -lpoppler-qt4
+LIBS += -lpoppler-qt5
 
 LOCALESUBDIR = locale
 TEMPLATESUBDIR = templates

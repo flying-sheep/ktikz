@@ -35,7 +35,7 @@ public slots:
 	void goToLine();
 
 signals:
-	void goToLine(int lineNumber);
+	void wentToLine(int lineNumber);
 	void focusEditor();
 
 protected:

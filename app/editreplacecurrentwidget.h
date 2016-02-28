@@ -36,9 +36,9 @@ public:
 
 signals:
 	void showReplaceWidget();
-	void search(const QString &text, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor);
-	void replace(const QString &replacement);
-	void replaceAll(const QString &text, const QString &replacement, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor);
+	void searched(const QString &text, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor);
+	void replaced(const QString &replacement);
+	void replacedAll(const QString &text, const QString &replacement, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor);
 	void setSearchFromBegin(bool searchFromBegin);
 
 protected:

@@ -19,8 +19,9 @@
  ***************************************************************************/
 
 #include <KAboutData>
-#include <KCmdLineArgs>
-#include <KUrl>
+#include <KLocalizedString>
+#include <QCommandLineParser>
+#include <QUrl>
 #include <QDir>
 #include <QFileInfo>
 #include <QLibraryInfo>
@@ -30,22 +31,28 @@
 
 #include "ktikzapplication.h"
 
-void debugOutput(QtMsgType type, const char *msg)
+void debugOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+	Q_UNUSED(context);
 	// qDebug() and qWarning() only show messages when in debug mode
 	switch (type)
 	{
 		case QtDebugMsg:
+		case QtInfoMsg:
+#ifndef QT_NO_DEBUG
+			fprintf(stderr, "%s\n", msg.toUtf8().constData());
+#endif
+			break;
 		case QtWarningMsg:
 #ifndef QT_NO_DEBUG
-			fprintf(stderr, "%s\n", msg);
+			fprintf(stderr, "%s\n", msg.toUtf8().constData());
 #endif
 			break;
 		case QtCriticalMsg:
-			fprintf(stderr, "%s\n", msg);
+			fprintf(stderr, "%s\n", msg.toUtf8().constData());
 			break;
 		case QtFatalMsg:
-			fprintf(stderr, "Fatal: %s\n", msg);
+			fprintf(stderr, "Fatal: %s\n", msg.toUtf8().constData());
 			abort();
 	}
 }
@@ -61,7 +68,7 @@ bool findTranslator(QTranslator *translator, const QString &transName, const QSt
 
 QTranslator *createTranslator(const QString &transName, const QString &transDir)
 {
-	const QString locale = KGlobal::locale()->language();
+	const QString locale = QLocale().name();
 	const QString localeShort = locale.left(2).toLower();
 
 	bool foundTranslator = false;
@@ -91,28 +98,30 @@ QTranslator *createTranslator(const QString &transName, const QString &transDir)
 
 int main(int argc, char **argv)
 {
-	qInstallMsgHandler(debugOutput);
+	qInstallMessageHandler(debugOutput);
 
 	Q_INIT_RESOURCE(ktikz);
 
-	KAboutData aboutData("ktikz", "ktikz", ki18n("KTikZ"), APPVERSION);
-	aboutData.setShortDescription(ki18n("A TikZ Editor"));
-	aboutData.setLicense(KAboutData::License_GPL_V2);
-	aboutData.setCopyrightStatement(ki18n("Copyright 2007-2010 Florian Hackenberger, Glad Deschrijver"));
-	aboutData.setOtherText(ki18n("This is a program for creating TikZ (from the LaTeX pgf package) diagrams."));
+	KAboutData aboutData("ktikz", i18n("KTikZ"), APPVERSION);
+	aboutData.setShortDescription(i18n("A TikZ Editor"));
+	aboutData.setLicense(KAboutLicense::GPL_V2);
+	aboutData.setCopyrightStatement(i18n("Copyright 2007-2010 Florian Hackenberger, Glad Deschrijver"));
+	aboutData.setOtherText(i18n("This is a program for creating TikZ (from the LaTeX pgf package) diagrams."));
 	aboutData.setBugAddress("florian@hackenberger.at");
-	aboutData.addAuthor(ki18n("Florian Hackenberger"), ki18n("Maintainer"), "florian@hackenberger.at");
-	aboutData.addAuthor(ki18n("Glad Deschrijver"), ki18n("Developer"), "glad.deschrijver@gmail.com");
-
-	KCmdLineArgs::init(argc, argv, &aboutData);
-
-	KCmdLineOptions options;
-	options.add("+[URL]", ki18n("TikZ document to open"));
-	KCmdLineArgs::addCmdLineOptions(options);
-
+	aboutData.addAuthor(i18n("Florian Hackenberger"), i18n("Maintainer"), "florian@hackenberger.at");
+	aboutData.addAuthor(i18n("Glad Deschrijver"), i18n("Developer"), "glad.deschrijver@gmail.com");
+	
 	KtikzApplication app(argc, argv);
+	
+	QCommandLineParser parser;
+	aboutData.setupCommandLine(&parser);
+	
+	QCommandLineOption urlOption("+[URL]", i18n("TikZ document to open"));
+	parser.addOption(urlOption);
+	
+	parser.process(app);
+	
 	QCoreApplication::setOrganizationName(ORGNAME);
-
 
 	const QString translationsDirPath = qgetenv("KTIKZ_TRANSLATIONS_DIR");
 	QTranslator *qtTranslator = createTranslator("qt", QLibraryInfo::location(QLibraryInfo::TranslationsPath));

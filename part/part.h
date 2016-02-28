@@ -20,11 +20,8 @@
 #define KTIKZ_PART_H
 
 #include "../common/mainwidget.h"
+#include <KDirWatch>
 #include <KParts/ReadOnlyPart>
-
-class KAboutData;
-class KAction;
-class KDirWatch;
 
 class PartConfigDialog;
 class TikzPreviewController;
@@ -41,9 +38,10 @@ public:
 	virtual ~Part();
 
 	static KAboutData *createAboutData();
+	virtual KActionCollection *actionCollection() const;
 	virtual QWidget *widget();
 	QString tikzCode() const;
-	Url url() const;
+	QUrl url() const;
 
 protected:
 	virtual bool openFile();
@@ -66,8 +64,8 @@ private:
 	TikzPreviewController *m_tikzPreviewController;
 	PartConfigDialog *m_configDialog;
 
-	KAction *m_saveAsAction;
-//	KAction *m_reloadAction;
+	QAction *m_saveAsAction;
+//	QAction *m_reloadAction;
 
 	QString m_tikzCode;
 

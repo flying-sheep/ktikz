@@ -17,14 +17,19 @@
  ***************************************************************************/
 
 #include "tikzpreviewcontroller.h"
+#include <kactioncollection.h>
+#include <QMimeDatabase>
 
-#include <KDebug>
-#include <KFileDialog>
+#include <kjobwidgets.h>
+
+#include <QAction>
+#include <QDebug>
+#include <QFileDialog>
+#include <QMimeType>
 #include <KMessageBox>
-#include <KTempDir>
+#include <QTemporaryDir>
 #include <KIO/Job>
 #include <KIO/JobUiDelegate>
-#include <KIO/NetAccess>
 
 #include <QMenu>
 #include <QPointer>
@@ -34,9 +39,8 @@
 #include "tikzpreview.h"
 #include "tikzpreviewgenerator.h"
 #include "mainwidget.h"
-#include "utils/action.h"
-#include "utils/icon.h"
-#include "utils/toggleaction.h"
+#include <QIcon>
+#include <KToggleAction>
 
 TikzPreviewController::TikzPreviewController(MainWidget *mainWidget)
 {
@@ -45,23 +49,23 @@ TikzPreviewController::TikzPreviewController(MainWidget *mainWidget)
 
 	m_templateWidget = new TemplateWidget(m_parentWidget);
 
-	m_tikzPreview = new TikzPreview(m_parentWidget);
+	m_tikzPreview = new TikzPreview(mainWidget, m_parentWidget);
 	m_tikzPreviewGenerator = new TikzPreviewGenerator(this);
 
 	createActions();
 
-	connect(m_tikzPreviewGenerator, SIGNAL(pixmapUpdated(Poppler::Document*)),
-	        m_tikzPreview, SLOT(pixmapUpdated(Poppler::Document*)));
-	connect(m_tikzPreviewGenerator, SIGNAL(showErrorMessage(QString)),
-	        m_tikzPreview, SLOT(showErrorMessage(QString)));
-	connect(m_tikzPreviewGenerator, SIGNAL(setExportActionsEnabled(bool)),
-	        this, SLOT(setExportActionsEnabled(bool)));
-	connect(m_tikzPreviewGenerator, SIGNAL(shortLogUpdated(QString,bool)),
-	        this, SIGNAL(logUpdated(QString,bool)));
-	connect(m_templateWidget, SIGNAL(fileNameChanged(QString)),
-	        this, SLOT(setTemplateFileAndRegenerate(QString)));
-//	connect(m_templateWidget, SIGNAL(replaceTextChanged(QString)),
-//	        this, SLOT(setReplaceTextAndRegenerate(QString)));
+	connect(m_tikzPreviewGenerator, &TikzPreviewGenerator::pixmapUpdated,
+		m_tikzPreview, &TikzPreview::pixmapUpdated);
+	connect(m_tikzPreviewGenerator, &TikzPreviewGenerator::showErrorMessage,
+		m_tikzPreview, &TikzPreview::showErrorMessage);
+	connect(m_tikzPreviewGenerator, &TikzPreviewGenerator::setExportActionsEnabled,
+		this, &TikzPreviewController::setExportActionsEnabled);
+	connect(m_tikzPreviewGenerator, &TikzPreviewGenerator::shortLogUpdated,
+		this, &TikzPreviewController::logUpdated);
+	connect(m_templateWidget, &TemplateWidget::fileNameChanged,
+		this, &TikzPreviewController::setTemplateFileAndRegenerate);
+	//	connect(m_templateWidget, &TemplateWidget::replaceTextChanged,
+	//		this, &TikzPreviewController::setReplaceTextAndRegenerate;
 
 	createTempDir();
 
@@ -78,9 +82,9 @@ TikzPreviewController::~TikzPreviewController()
 
 void TikzPreviewController::createTempDir()
 {
-	m_tempDir = new KTempDir();
+	m_tempDir = new QTemporaryDir();
 	m_tempDir->setAutoRemove(true);
-	m_tempTikzFileBaseName = m_tempDir->name() + "temptikzcode";
+	m_tempTikzFileBaseName = QDir(m_tempDir->path()).dirName() + "temptikzcode";
 	m_tikzPreviewGenerator->setTikzFileBaseName(m_tempTikzFileBaseName);
 }
 
@@ -91,7 +95,7 @@ void TikzPreviewController::removeTempDir()
 
 const QString TikzPreviewController::tempDir() const
 {
-	return m_tempDir->name();
+	return QDir(m_tempDir->path()).dirName();
 }
 
 /***************************************************************************/
@@ -110,52 +114,54 @@ TikzPreview *TikzPreviewController::tikzPreview() const
 
 void TikzPreviewController::createActions()
 {
+	KActionCollection *ac = m_mainWidget->actionCollection();
 	// File
-	m_exportAction = new Action(Icon("document-export"), tr("E&xport"), m_parentWidget, "file_export_as");
+	m_exportAction = ac->addAction("file_export_as", new QAction(QIcon::fromTheme("document-export"), tr("E&xport"), m_parentWidget));
 	m_exportAction->setStatusTip(tr("Export image to various formats"));
 	m_exportAction->setWhatsThis(tr("<p>Export image to various formats.</p>"));
 	QMenu *exportMenu = new QMenu(m_parentWidget);
 	m_exportAction->setMenu(exportMenu);
 
-	Action *exportEpsAction = new Action(Icon("image-x-eps"), tr("&Encapsulated PostScript (EPS)"), m_parentWidget, "file_export_eps");
+	QAction *exportEpsAction = ac->addAction("file_export_eps", new QAction(QIcon::fromTheme("image-x-eps"), tr("&Encapsulated PostScript (EPS)"), m_parentWidget));
 	exportEpsAction->setData("image/x-eps");
 	exportEpsAction->setStatusTip(tr("Export to EPS"));
 	exportEpsAction->setWhatsThis(tr("<p>Export to EPS.</p>"));
-	connect(exportEpsAction, SIGNAL(triggered()), this, SLOT(exportImage()));
+	connect(exportEpsAction, &QAction::triggered, this, &TikzPreviewController::exportImage);
 	exportMenu->addAction(exportEpsAction);
 
-	Action *exportPdfAction = new Action(Icon("application-pdf"), tr("&Portable Document Format (PDF)"), m_parentWidget, "file_export_pdf");
+	QAction *exportPdfAction = ac->addAction("file_export_pdf", new QAction(QIcon::fromTheme("application-pdf"), tr("&Portable Document Format (PDF)"), m_parentWidget));
 	exportPdfAction->setData("application/pdf");
 	exportPdfAction->setStatusTip(tr("Export to PDF"));
 	exportPdfAction->setWhatsThis(tr("<p>Export to PDF.</p>"));
-	connect(exportPdfAction, SIGNAL(triggered()), this, SLOT(exportImage()));
+	connect(exportPdfAction, &QAction::triggered, this, &TikzPreviewController::exportImage);
 	exportMenu->addAction(exportPdfAction);
 
-	Action *exportPngAction = new Action(Icon("image-png"), tr("Portable Network &Graphics (PNG)"), m_parentWidget, "file_export_png");
+	QAction *exportPngAction = ac->addAction("file_export_png", new QAction(QIcon::fromTheme("image-png"), tr("Portable Network &Graphics (PNG)"), m_parentWidget));
 	exportPngAction->setData("image/png");
 	exportPngAction->setStatusTip(tr("Export to PNG"));
 	exportPngAction->setWhatsThis(tr("<p>Export to PNG.</p>"));
-	connect(exportPngAction, SIGNAL(triggered()), this, SLOT(exportImage()));
+	connect(exportPngAction, &QAction::triggered, this, &TikzPreviewController::exportImage);
 	exportMenu->addAction(exportPngAction);
 
 	setExportActionsEnabled(false);
 
 	// View
-	m_procStopAction = new Action(Icon("process-stop"), tr("&Stop Process"), m_parentWidget, "stop_process");
-	m_procStopAction->setShortcut(tr("Escape", "View|Stop Process"));
+	m_procStopAction = ac->addAction("stop_process", new QAction(QIcon::fromTheme("process-stop"), tr("&Stop Process"), m_parentWidget));
+	ac->setDefaultShortcut(m_procStopAction, tr("Escape", "View|Stop Process"));
 	m_procStopAction->setStatusTip(tr("Abort current process"));
 	m_procStopAction->setWhatsThis(tr("<p>Abort the execution of the currently running process.</p>"));
 	m_procStopAction->setEnabled(false);
-	connect(m_procStopAction, SIGNAL(triggered()), m_tikzPreviewGenerator, SLOT(abortProcess()));
+	connect(m_procStopAction, &QAction::triggered, m_tikzPreviewGenerator, &TikzPreviewGenerator::abortProcess);
 
-	m_shellEscapeAction = new ToggleAction(Icon("application-x-executable"), tr("S&hell Escape"), m_parentWidget, "shell_escape");
+	m_shellEscapeAction = new KToggleAction(QIcon::fromTheme("application-x-executable"), tr("S&hell Escape"), m_parentWidget);
+	ac->addAction("shell_escape", m_shellEscapeAction);
 	m_shellEscapeAction->setStatusTip(tr("Enable the \\write18{shell-command} feature"));
 	m_shellEscapeAction->setWhatsThis(tr("<p>Enable LaTeX to run shell commands, this is needed when you want to plot functions using gnuplot within TikZ."
 	    "</p><p><strong>Warning:</strong> Enabling this may cause malicious software to be run on your computer! Check the LaTeX code to see which commands are executed.</p>"));
-	connect(m_shellEscapeAction, SIGNAL(toggled(bool)), this, SLOT(toggleShellEscaping(bool)));
+	connect(m_shellEscapeAction, &KToggleAction::toggled, this, &TikzPreviewController::toggleShellEscaping);
 
-	connect(m_tikzPreviewGenerator, SIGNAL(processRunning(bool)),
-	        this, SLOT(setProcessRunning(bool)));
+	connect(m_tikzPreviewGenerator, &TikzPreviewGenerator::processRunning,
+			this, &TikzPreviewController::setProcessRunning);
 }
 
 
@@ -165,34 +171,34 @@ void TikzPreviewController::showJobError(KJob *job)
 {
 	if (job->error() != 0)
 	{
-		KIO::JobUiDelegate *ui = static_cast<KIO::Job*>(job)->ui();
+		KJobUiDelegate *ui = static_cast<KIO::Job*>(job)->ui();
 		if (!ui)
 		{
-			kError() << "Saving failed; job->ui() is null.";
+			qCritical() << "Saving failed; job->ui() is null.";
 			return;
 		}
-		ui->setWindow(m_parentWidget);
+		KJobWidgets::setWindow(job, m_parentWidget);
 		ui->showErrorMessage();
 	}
 }
 
-KUrl TikzPreviewController::getExportUrl(const KUrl &url, const QString &mimeType) const
+QUrl TikzPreviewController::getExportUrl(const QUrl &url, const QString &mimeName) const
 {
-	KMimeType::Ptr mimeTypePtr = KMimeType::mimeType(mimeType);
-	const QString exportUrlExtension = KMimeType::extractKnownExtension(url.path());
+	QMimeDatabase db;
+	QMimeType mimeType = db.mimeTypeForName(mimeName);
+	const QString exportUrlExtension = db.suffixForFileName(url.path());
 
-	const KUrl exportUrl = KUrl(url.url().left(url.url().length()
-	    - (exportUrlExtension.isEmpty() ? 0 : exportUrlExtension.length() + 1)) // the extension is empty when the text/x-pgf mimetype is not correctly installed or when the file does not have a correct extension
-	    + mimeTypePtr->patterns().at(0).mid(1)); // first extension in the list of possible extensions (without *)
+	const QUrl exportUrl = QUrl(url.url().left(url.url().length()
+		- (exportUrlExtension.isEmpty() ? 0 : exportUrlExtension.length() + 1)) // the extension is empty when the text/x-pgf mimetype is not correctly installed or when the file does not have a correct extension
+		+ mimeType.globPatterns().at(0).mid(1)); // first extension in the list of possible extensions (without *)
 
-	return KFileDialog::getSaveUrl(exportUrl,
-	    mimeTypePtr->patterns().join(" ") + '|'
-//	    + mimeTypePtr->comment() + "\n*|" + i18nc("@item:inlistbox filter", "All files"),
-	    + mimeTypePtr->comment() + "\n*|" + tr("All files"),
-	    m_parentWidget,
-//	    i18nc("@title:window", "Export Image"),
-	    tr("Export Image"),
-	    KFileDialog::ConfirmOverwrite);
+	return QFileDialog::getSaveFileUrl(
+		m_parentWidget,
+		tr("Export Image"),
+		exportUrl,
+		mimeType.globPatterns().join(" ") + '|'
+		//	+ mimeType.comment() + "\n*|" + i18nc("@item:inlistbox filter", "All files"),
+			+ mimeType.comment() + "\n*|" + tr("All files"));
 }
 
 void TikzPreviewController::exportImage()
@@ -204,7 +210,7 @@ void TikzPreviewController::exportImage()
 	if (tikzImage.isNull())
 		return;
 
-	const KUrl exportUrl = getExportUrl(m_mainWidget->url(), mimeType);
+	const QUrl exportUrl = getExportUrl(m_mainWidget->url(), mimeType);
 	if (!exportUrl.isValid())
 		return;
 
@@ -224,37 +230,40 @@ void TikzPreviewController::exportImage()
 		extension = ".png";
 		tikzImage.save(m_tempTikzFileBaseName + extension);
 	}
-	KIO::Job *job = KIO::file_copy(KUrl::fromPath(m_tempTikzFileBaseName + extension), exportUrl, -1, KIO::Overwrite | KIO::HideProgressInfo);
-	connect(job, SIGNAL(result(KJob*)), this, SLOT(showJobError(KJob*)));
+	KIO::Job *job = KIO::file_copy(QUrl::fromLocalFile(m_tempTikzFileBaseName + extension), exportUrl, -1, KIO::Overwrite | KIO::HideProgressInfo);
+	connect(job, &KIO::Job::result, this, &TikzPreviewController::showJobError);
 }
 
 /***************************************************************************/
 
 bool TikzPreviewController::setTemplateFile(const QString &path)
 {
-	const KUrl url(path);
-	const KUrl localUrl = KUrl::fromPath(m_tempDir->name() + "tikztemplate.tex");
+	const QUrl url = QUrl::fromUserInput(path);
+	const QUrl localUrl = QUrl::fromLocalFile(QDir(m_tempDir->path()).dirName() + "tikztemplate.tex");
 
-	if (url.isValid() && !url.isLocalFile() && KIO::NetAccess::exists(url, KIO::NetAccess::SourceSide, m_parentWidget))
+	auto statJob = KIO::stat(url, KIO::StatJob::SourceSide, 0);
+	bool readable = statJob->exec() && ((S_IRUSR|S_IRGRP|S_IROTH) & statJob->statResult().numberValue(KIO::UDSEntry::UDS_ACCESS));
+	if (url.isValid() && !url.isLocalFile() && readable)
 	{
-		KIO::Job *job = KIO::file_copy(url, localUrl, -1, KIO::Overwrite | KIO::HideProgressInfo);
-		if (!KIO::NetAccess::synchronousRun(job, m_parentWidget))
+		auto copyJob = KIO::file_copy(url, localUrl, -1, KIO::Overwrite | KIO::HideProgressInfo);
+		if (!copyJob->exec())
 		{
-//			KMessageBox::information(m_parentWidget, i18nc("@info", "Template file could not be copied to a temporary file <filename>%1</filename>.", localUrl.prettyUrl()));
-			KMessageBox::information(m_parentWidget, tr("Template file could not be copied to a temporary file \"%1\".").arg(localUrl.prettyUrl()));
+		//	KMessageBox::information(m_parentWidget, i18nc("@info", "Template file could not be copied to a temporary file <filename>%1</filename>.", localUrl.prettyUrl()));
+			KMessageBox::information(m_parentWidget, tr("Template file could not be copied to a temporary file \"%1\".").arg(localUrl.toDisplayString()));
 			return false;
 		}
-		m_tikzPreviewGenerator->setTemplateFile(localUrl.path());
+		else
+			m_tikzPreviewGenerator->setTemplateFile(localUrl.path());
 	}
 	else
 		m_tikzPreviewGenerator->setTemplateFile(path);
 	return true;
 }
 
-void TikzPreviewController::setTemplateFileAndRegenerate(const QString &path)
-{
-	if (setTemplateFile(path))
-		generatePreview(true);
+bool TikzPreviewController::setTemplateFileAndRegenerate(const QString &path) {
+	bool r = setTemplateFile(path);
+	generatePreview(true);
+	return r;
 }
 
 void TikzPreviewController::setReplaceTextAndRegenerate(const QString &replace)
@@ -313,10 +322,10 @@ void TikzPreviewController::applySettings()
 	m_tikzPreviewGenerator->setPdftopsCommand(settings.value("PdftopsCommand", "pdftops").toString());
 	const bool useShellEscaping = settings.value("UseShellEscaping", false).toBool();
 
-	disconnect(m_shellEscapeAction, SIGNAL(toggled(bool)), this, SLOT(toggleShellEscaping(bool)));
+	disconnect(m_shellEscapeAction, &KToggleAction::toggled, this, &TikzPreviewController::toggleShellEscaping);
 	m_shellEscapeAction->setChecked(useShellEscaping);
 	m_tikzPreviewGenerator->setShellEscaping(useShellEscaping);
-	connect(m_shellEscapeAction, SIGNAL(toggled(bool)), this, SLOT(toggleShellEscaping(bool)));
+	connect(m_shellEscapeAction, &KToggleAction::toggled, this, &TikzPreviewController::toggleShellEscaping);
 
 	setTemplateFile(settings.value("TemplateFile").toString());
 	const QString replaceText = settings.value("TemplateReplaceText", "<>").toString();

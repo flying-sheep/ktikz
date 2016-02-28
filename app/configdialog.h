@@ -20,6 +20,7 @@
 #define KTIKZ_CONFIGDIALOG_H
 
 #include <KPageDialog>
+#include <QDialogButtonBox>
 
 class QLabel;
 class QListWidgetItem;
@@ -61,9 +62,11 @@ private:
 	ConfigGeneralWidget *m_configGeneralWidget;
 	ConfigEditorWidget *m_configEditorWidget;
 	ConfigAppearanceWidget *m_configAppearanceWidget;
+	QDialogButtonBox *m_buttonBox;
 
 private slots:
 	void accept();
+	void helpRequested();
 };
 
 #endif

@@ -21,17 +21,18 @@
 #include <QDebug>
 #include "mainwindow.h"
 
+#include <QAction>
 #include <KActionCollection>
 #include <KConfigGroup>
+#include <KSharedConfig>
 #include <KLocalizedString>
-#include <KMenuBar>
+#include <QMenuBar>
 #include <KMessageBox>
-#include <KSaveFile>
+#include <QSaveFile>
 #include <KStandardAction>
-#include <KStatusBar>
+#include <QStatusBar>
 #include <KXMLGUIFactory>
 #include <KIO/Job>
-#include <KIO/NetAccess>
 
 #include <QCloseEvent>
 #include <QCompleter>
@@ -47,9 +48,12 @@
 #include <QTextStream>
 #include <QToolBar>
 #include <QToolButton>
-//#include <QUrl>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QWhatsThis>
+#include <QIcon>
+#include <QFileDialog>
+#include <KToggleAction>
 
 #include "configdialog.h"
 #include "ktikzapplication.h"
@@ -62,15 +66,8 @@
 #include "../common/templatewidget.h"
 #include "../common/tikzpreviewcontroller.h"
 #include "../common/tikzpreview.h"
-#include "../common/utils/action.h"
-#include "../common/utils/filedialog.h"
-#include "../common/utils/icon.h"
-#include "../common/utils/recentfilesaction.h"
-#include "../common/utils/standardaction.h"
-#include "../common/utils/toggleaction.h"
-#include "../common/utils/url.h"
 
-#include <poppler-qt4.h>
+#include <poppler-qt5.h>
 
 QList<MainWindow*> MainWindow::s_mainWindowList;
 static const QString s_tempFileName = "tikzcode.pgf";
@@ -85,8 +82,7 @@ MainWindow::MainWindow()
 
 	setAttribute(Qt::WA_DeleteOnClose);
 	setObjectName("ktikz#");
-	setWindowIcon(KIcon("ktikz"));
-	Action::setActionCollection(actionCollection());
+	setWindowIcon(QIcon::fromTheme("ktikz"));
 
 	setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
@@ -142,32 +138,24 @@ MainWindow::MainWindow()
 	createGUI();
 	guiFactory()->addClient(this);
 
-	connect(m_commandInserter, SIGNAL(showStatusMessage(QString,int)),
-	        statusBar(), SLOT(showMessage(QString,int)));
+	connect(m_commandInserter, &TikzCommandInserter::showStatusMessage, statusBar(), &QStatusBar::showMessage);
 
-	connect(m_tikzEditorView, SIGNAL(modificationChanged(bool)),
-	        this, SLOT(setDocumentModified(bool)));
-	connect(m_tikzEditorView, SIGNAL(cursorPositionChanged(int,int)),
-	        this, SLOT(showCursorPosition(int,int)));
-	connect(m_tikzEditorView, SIGNAL(showStatusMessage(QString,int)),
-	        statusBar(), SLOT(showMessage(QString,int)));
+	connect(m_tikzEditorView, &TikzEditorView::modificationChanged, this, &MainWindow::setDocumentModified);
+	connect(m_tikzEditorView, &TikzEditorView::cursorPositionChanged, this, &MainWindow::showCursorPosition);
+	connect(m_tikzEditorView, &TikzEditorView::showStatusMessage, statusBar(), &QStatusBar::showMessage);
 
-	connect(m_tikzEditorView, SIGNAL(focusIn()),
-	        this, SLOT(checkForFileChanges()));
-	connect(m_tikzEditorView, SIGNAL(focusOut()),
-	        this, SLOT(saveLastInternalModifiedDateTime()));
+	connect(m_tikzEditorView, &TikzEditorView::focusIn, this, &MainWindow::checkForFileChanges);
+	connect(m_tikzEditorView, &TikzEditorView::focusOut, this, &MainWindow::saveLastInternalModifiedDateTime);
 
-	connect(m_tikzPreviewController, SIGNAL(logUpdated(QString,bool)),
-	        m_logTextEdit, SLOT(logUpdated(QString,bool)));
+	connect(m_tikzPreviewController, &TikzPreviewController::logUpdated, m_logTextEdit, static_cast<void (LogTextEdit::*)(const QString&, bool)>(&LogTextEdit::logUpdated));
 
 	readSettings(); // must be run after defining tikzController and tikzHighlighter, and after creating the toolbars, and after the connects
 
 	// the following connects must happen after readSettings() because otherwise in that function the following signals would be unnecessarily triggered
 	if (m_buildAutomatically)
-		connect(m_tikzEditorView, SIGNAL(contentsChanged()),
-		        m_tikzPreviewController, SLOT(regeneratePreview()));
+		connect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
 
-	setCurrentUrl(Url());
+	setCurrentUrl(QUrl());
 	setDocumentModified(false);
 	saveLastInternalModifiedDateTime();
 	m_tikzEditorView->editor()->setFocus();
@@ -197,6 +185,11 @@ MainWindow::~MainWindow()
 */
 }
 
+KActionCollection *MainWindow::actionCollection() const
+{
+	return KXmlGuiWindow::actionCollection();
+}
+
 QWidget *MainWindow::widget()
 {
 	return this;
@@ -209,7 +202,7 @@ bool MainWindow::queryClose()
 
 void MainWindow::readProperties(const KConfigGroup &group)
 {
-	const KUrl url(group.readPathEntry("CurrentUrl", QString()));
+	const QUrl url = QUrl(group.readPathEntry("CurrentUrl", QString()));
 	if (url.isValid() && !url.isEmpty())
 		loadUrl(url);
 }
@@ -240,12 +233,10 @@ bool MainWindow::closeFile()
 {
 	if (maybeSave())
 	{
-		disconnect(m_tikzEditorView, SIGNAL(contentsChanged()),
-		           m_tikzPreviewController, SLOT(regeneratePreview()));
+		disconnect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
 		m_tikzEditorView->editor()->clear();
-		connect(m_tikzEditorView, SIGNAL(contentsChanged()),
-		           m_tikzPreviewController, SLOT(regeneratePreview()));
-		setCurrentUrl(Url());
+		connect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
+		setCurrentUrl(QUrl());
 		m_tikzPreviewController->emptyPreview(); // abort still running processes
 		m_logTextEdit->logUpdated("", false); // clear log window
 		return true;
@@ -255,7 +246,7 @@ bool MainWindow::closeFile()
 
 void MainWindow::open()
 {
-	const Url openUrl = FileDialog::getOpenUrl(this, tr("Open PGF source file"), m_lastUrl, QString("*.pgf *.tikz *.tex|%1\n*|%2").arg(tr("PGF files", "filter")).arg(tr("All files", "filter")));
+	const QUrl openUrl = QFileDialog::getOpenFileUrl(this, tr("Open PGF source file"), m_lastUrl, QString("*.pgf *.tikz *.tex|%1\n*|%2").arg(tr("PGF files", "filter")).arg(tr("All files", "filter")));
 	if (openUrl.isValid() && !openUrl.isEmpty())
 		loadUrl(openUrl);
 }
@@ -270,7 +261,7 @@ bool MainWindow::save()
 
 bool MainWindow::saveAs()
 {
-	const Url saveAsUrl = FileDialog::getSaveUrl(this, tr("Save PGF source file"), m_currentUrl, QString("*.pgf *.tikz *.tex|%1\n*|%2").arg(tr("PGF files", "filter")).arg(tr("All files", "filter")));
+	const QUrl saveAsUrl = QFileDialog::getSaveFileUrl(this, tr("Save PGF source file"), m_currentUrl, QString("*.pgf *.tikz *.tex|%1\n*|%2").arg(tr("PGF files", "filter")).arg(tr("All files", "filter")));
 	if (!saveAsUrl.isValid() || saveAsUrl.isEmpty())
 		return false;
 	return saveUrl(saveAsUrl);
@@ -278,7 +269,7 @@ bool MainWindow::saveAs()
 
 void MainWindow::reload()
 {
-	const Url currentUrl = m_currentUrl;
+	const QUrl currentUrl = m_currentUrl;
 	if (closeFile())
 	{
 		saveLastInternalModifiedDateTime();
@@ -374,18 +365,18 @@ void MainWindow::toggleWhatsThisMode()
 void MainWindow::createActions()
 {
 	/* Open */
-	m_newAction = StandardAction::openNew(this, SLOT(newFile()), this);
-	m_openAction = StandardAction::open(this, SLOT(open()), this);
-	m_openRecentAction = StandardAction::openRecent(this, SLOT(loadUrl(Url)), this);
-	m_saveAction = StandardAction::save(this, SLOT(save()), this);
-	m_saveAsAction = StandardAction::saveAs(this, SLOT(saveAs()), this);
-	m_reloadAction = new Action(Icon("view-refresh"), tr("Reloa&d"), this, "file_reload");
+	m_newAction = KStandardAction::openNew(this, SLOT(newFile()), actionCollection());
+	m_openAction = KStandardAction::open(this, SLOT(open()), actionCollection());
+	m_openRecentAction = KStandardAction::openRecent(this, SLOT(loadUrl(QUrl)), actionCollection());
+	m_saveAction = KStandardAction::save(this, SLOT(save()), actionCollection());
+	m_saveAsAction = KStandardAction::saveAs(this, SLOT(saveAs()), actionCollection());
+	m_reloadAction = actionCollection()->addAction("file_reload", new QAction(QIcon::fromTheme("view-refresh"), tr("Reloa&d"), this));
 	m_reloadAction->setShortcut(QKeySequence::Refresh);
 	m_reloadAction->setStatusTip(tr("Reload the current document"));
 	m_reloadAction->setWhatsThis(tr("<p>Reload the current document from disk.</p>"));
-	connect(m_reloadAction, SIGNAL(triggered()), this, SLOT(reload()));
-	m_closeAction = StandardAction::close(this, SLOT(closeFile()), this);
-	m_exitAction = StandardAction::quit(this, SLOT(close()), this);
+	connect(m_reloadAction, &QAction::triggered, this, &MainWindow::reload);
+	m_closeAction = KStandardAction::close(this, SLOT(closeFile()), actionCollection());
+	m_exitAction = KStandardAction::quit(this, SLOT(close()), actionCollection());
 
 	m_newAction->setStatusTip(tr("Create a new document"));
 	m_openAction->setStatusTip(tr("Open an existing file"));
@@ -404,33 +395,33 @@ void MainWindow::createActions()
 	m_exitAction->setWhatsThis(tr("<p>Exit the application.</p>"));
 
 	/* View */
-	m_buildAction = new Action(Icon("run-build"), tr("&Build"), this, "build");
+	m_buildAction = actionCollection()->addAction("build", new QAction(QIcon::fromTheme("run-build"), tr("&Build"), this));
 	m_buildAction->setShortcut(tr("Ctrl+B", "View|Build"));
 	m_buildAction->setStatusTip(tr("Build preview"));
 	m_buildAction->setWhatsThis(tr("<p>Generate preview by building the current TikZ code in the editor.</p>"));
-	connect(m_buildAction, SIGNAL(triggered()), m_tikzPreviewController, SLOT(generatePreview()));
+	connect(m_buildAction, &QAction::triggered, m_tikzPreviewController, static_cast<void (TikzPreviewController::*)()>(&TikzPreviewController::generatePreview));
 
-	m_viewLogAction = new Action(Icon("run-build-file"), tr("View &Log"), this, "view_log");
+	m_viewLogAction = actionCollection()->addAction("view_log", new QAction(QIcon::fromTheme("run-build-file"), tr("View &Log"), this));
 	m_viewLogAction->setStatusTip(tr("View log messages produced by the last executed process"));
 	m_viewLogAction->setWhatsThis(tr("<p>Show the log messages produced by the last executed process in the Messages box.</p>"));
-	connect(m_viewLogAction, SIGNAL(triggered()), this, SLOT(logUpdated()));
+	connect(m_viewLogAction, &QAction::triggered, this, &MainWindow::logUpdated);
 
 	/* Configure */
-	m_configureAction = StandardAction::preferences(this, SLOT(configure()), this);
+	m_configureAction = KStandardAction::preferences(this, SLOT(configure()), actionCollection());
 	m_configureAction->setText(tr("&Configure %1...").arg(KtikzApplication::applicationName()));
 	m_configureAction->setStatusTip(tr("Configure the settings of this application"));
 	m_configureAction->setWhatsThis(tr("<p>Configure the settings of this application.</p>"));
-
+	
 	actionCollection()->addAction("toggle_preview", m_previewDock->toggleViewAction());
 	actionCollection()->addAction("toggle_log", m_logDock->toggleViewAction());
 
 	/* Help */
-	m_showTikzDocAction = new Action(Icon("help-contents"), tr("TikZ &Manual"), this, "show_tikz_doc");
+	m_showTikzDocAction = actionCollection()->addAction("show_tikz_doc", new QAction(QIcon::fromTheme("help-contents"), tr("TikZ &Manual"), this));
 	m_showTikzDocAction->setStatusTip(tr("Show the manual of TikZ and PGF"));
 	m_showTikzDocAction->setWhatsThis(tr("<p>Show the manual of TikZ and PGF.</p>"));
-	connect(m_showTikzDocAction, SIGNAL(triggered()), this, SLOT(showTikzDocumentation()));
-
-	m_whatsThisAction = KStandardAction::whatsThis(this, SLOT(toggleWhatsThisMode()), this);
+	connect(m_showTikzDocAction, &QAction::triggered, this, &MainWindow::showTikzDocumentation);
+	
+	m_whatsThisAction = KStandardAction::whatsThis(this, SLOT(toggleWhatsThisMode()), actionCollection());
 }
 
 
@@ -445,11 +436,11 @@ void MainWindow::createCommandInsertWidget()
 		addDockWidget(Qt::LeftDockWidgetArea, m_commandsDock);
 
 		actionCollection()->addAction("toggle_commands_list", m_commandsDock->toggleViewAction());
-		connect(m_commandsDock->toggleViewAction(), SIGNAL(toggled(bool)), this, SLOT(setDockWidgetStatusTip(bool)));
+		connect(m_commandsDock->toggleViewAction(), &QAction::toggled, this, &MainWindow::setDockWidgetStatusTip);
 	}
 	else
 	{
-		KAction *insertAction = new Action(tr("&Insert"), this, "insert");
+		QAction *insertAction = new QAction(tr("&Insert"), this);
 		insertAction->setMenu(m_commandInserter->getMenu());
 	}
 }
@@ -495,15 +486,13 @@ void MainWindow::configure()
 		m_configDialog->setTranslatedHighlightTypeNames(m_tikzHighlighter->getTranslatedHighlightTypeNames());
 		m_configDialog->setHighlightTypeNames(m_tikzHighlighter->getHighlightTypeNames());
 		m_configDialog->setDefaultHighlightFormats(m_tikzHighlighter->getDefaultHighlightFormats());
-		connect(m_configDialog, SIGNAL(settingsChanged()), this, SLOT(applySettings()));
+		connect(m_configDialog, &ConfigDialog::settingsChanged, this, &MainWindow::applySettings);
 	}
-	disconnect(m_tikzEditorView, SIGNAL(contentsChanged()),
-	           m_tikzPreviewController, SLOT(regeneratePreview()));
+	disconnect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
 	m_configDialog->readSettings();
 	m_configDialog->exec();
 	if (m_buildAutomatically)
-		connect(m_tikzEditorView, SIGNAL(contentsChanged()),
-		        m_tikzPreviewController, SLOT(regeneratePreview()));
+		connect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
 }
 
 void MainWindow::applySettings()
@@ -556,13 +545,11 @@ void MainWindow::applySettings()
 
 	m_tikzHighlighter->setTextCharFormats(formatList);
 	m_tikzHighlighter->rehighlight();
-
-	m_openRecentAction->createRecentFilesList();
 }
 
 void MainWindow::readSettings()
 {
-	m_openRecentAction->loadEntries();
+	m_openRecentAction->loadEntries(KSharedConfig::openConfig()->group("Recent Files"));
 
 	QSettings settings(ORGNAME, APPNAME);
 	settings.beginGroup("MainWindow");
@@ -578,7 +565,7 @@ void MainWindow::readSettings()
 
 void MainWindow::writeSettings()
 {
-	m_openRecentAction->saveEntries();
+	m_openRecentAction->saveEntries(KSharedConfig::openConfig()->group("Recent Files"));
 
 	QSettings settings(ORGNAME, APPNAME);
 
@@ -622,7 +609,7 @@ bool MainWindow::maybeSave()
 	return true;
 }
 
-void MainWindow::loadUrl(const Url &url)
+void MainWindow::loadUrl(const QUrl &url)
 {
 	// check whether the file can be opened
 	if (!url.isValid() || url.isEmpty())
@@ -630,26 +617,28 @@ void MainWindow::loadUrl(const Url &url)
 
 	const QString localFileName = url.isLocalFile() ? url.path() : m_tikzPreviewController->tempDir() + s_tempFileName;
 
-	if (!url.isLocalFile() && KIO::NetAccess::exists(url, KIO::NetAccess::SourceSide, this))
+	auto statJob = KIO::stat(url, KIO::StatJob::SourceSide, 0);
+	bool readable = statJob->exec() && ((S_IRUSR|S_IRGRP|S_IROTH) & statJob->statResult().numberValue(KIO::UDSEntry::UDS_ACCESS));
+	if (!url.isLocalFile() && readable)
 	{
-		KIO::Job *job = KIO::file_copy(url, KUrl::fromPath(localFileName), -1, KIO::Overwrite | KIO::HideProgressInfo);
-		if (!KIO::NetAccess::synchronousRun(job, this))
+		auto copyJob = KIO::file_copy(url, QUrl::fromLocalFile(localFileName), -1, KIO::Overwrite | KIO::HideProgressInfo);
+		if (!copyJob->exec())
 		{
-//			KMessageBox::information(this, i18nc("@info", "Could not copy <filename>%1</filename> to temporary file <filename>%2</filename>.", url.prettyUrl(), localFileName));
-			KMessageBox::information(this, tr("Could not copy \"%1\" to temporary file \"%2\".").arg(url.prettyUrl()).arg(localFileName));
+		//	KMessageBox::information(this, i18nc("@info", "Could not copy <filename>%1</filename> to temporary file <filename>%2</filename>.", url.prettyUrl(), localFileName));
+			KMessageBox::information(this, tr("Could not copy \"%1\" to temporary file \"%2\".").arg(url.toDisplayString()).arg(localFileName));
 			return;
 		}
 	}
-
+	
 	QFile localFile(localFileName);
 	if (!localFile.open(QFile::ReadOnly | QFile::Text))
 	{
-//		KMessageBox::error(this, i18nc("@info", "Cannot read file <filename>%1</filename>:<nl/><message>%2</message>", localFileName, localFile.errorString()), i18nc("@title:window", "File Read Error"));
+	//	KMessageBox::error(this, i18nc("@info", "Cannot read file <filename>%1</filename>:<nl/><message>%2</message>", localFileName, localFile.errorString()), i18nc("@title:window", "File Read Error"));
 		KMessageBox::error(this, tr("Cannot read file \"%1\":\n%2").arg(localFileName).arg(localFile.errorString()), tr("File Read Error", "@title:window"));
 		m_openRecentAction->removeUrl(url);
 		return;
 	}
-
+	
 	// only open a new window (if necessary) if the file can actually be opened
 	if (!m_tikzEditorView->editor()->document()->isEmpty())
 	{
@@ -658,34 +647,32 @@ void MainWindow::loadUrl(const Url &url)
 		newMainWindow->show();
 		return;
 	}
-
+	
 	// load the file and generate preview
-	disconnect(m_tikzEditorView, SIGNAL(contentsChanged()),
-	           m_tikzPreviewController, SLOT(regeneratePreview()));
+	disconnect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
 	QTextStream in(&localFile);
 	QApplication::setOverrideCursor(Qt::WaitCursor);
 	m_tikzEditorView->editor()->setPlainText(in.readAll());
 	QApplication::restoreOverrideCursor();
 	m_tikzPreviewController->generatePreview();
 	if (m_buildAutomatically)
-		connect(m_tikzEditorView, SIGNAL(contentsChanged()),
-		        m_tikzPreviewController, SLOT(regeneratePreview()));
-
+		connect(m_tikzEditorView, &TikzEditorView::contentsChanged, m_tikzPreviewController, &TikzPreviewController::regeneratePreview);
+		
 	m_lastUrl = url;
 	setCurrentUrl(url);
 	m_openRecentAction->addUrl(url);
 	statusBar()->showMessage(tr("File loaded"), 2000);
 }
 
-bool MainWindow::saveUrl(const Url &url)
+bool MainWindow::saveUrl(const QUrl &url)
 {
 	if (!url.isValid() || url.isEmpty())
 		return false;
 
 	const QString localFileName = url.isLocalFile() ? url.path() : m_tikzPreviewController->tempDir() + s_tempFileName;
 
-	KSaveFile localFile(localFileName);
-	if (!localFile.open())
+	QSaveFile localFile(localFileName);
+	if (!localFile.open(QIODevice::WriteOnly))
 	{
 //		KMessageBox::error(this, i18nc("@info", "Cannot write file <filename>%1</filename>:<nl/><message>%2</message>", localFileName, localFile.errorString()), i18nc("@title:window", "File Save Error"));
 		KMessageBox::error(this, tr("Cannot write file \"%1\":\n%2").arg(localFileName).arg(localFile.errorString()), tr("File Save Error", "@title:window"));
@@ -698,23 +685,24 @@ bool MainWindow::saveUrl(const Url &url)
 	out.flush();
 	QApplication::restoreOverrideCursor();
 
-	if (!localFile.finalize())
+	if (!localFile.commit())
 	{
 //		KMessageBox::error(this, i18nc("@info", "Cannot write file <filename>%1</filename>:<nl/><message>%2</message>", localFileName, localFile.errorString()), i18nc("@title:window", "File Save Error"));
 		KMessageBox::error(this, tr("Cannot write file \"%1\":\n%2").arg(localFileName).arg(localFile.errorString()), tr("File Save Error", "@title:window"));
 		return false;
 	}
-	localFile.close();
 
 	if (!url.isLocalFile())
 	{
-		KIO::Job *job = KIO::file_copy(KUrl::fromPath(localFileName), url, -1, KIO::Overwrite | KIO::HideProgressInfo);
-		if (!KIO::NetAccess::synchronousRun(job, this))
-		{
-//			KMessageBox::information(this, i18nc("@info", "Could not copy temporary file <filename>%1</filename> to <filename>%2</filename>.", localFileName, url.prettyUrl()));
-			KMessageBox::information(this, tr("Could not copy temporary file \"%1\" to \"%2\".").arg(localFileName).arg(url.prettyUrl()));
-			return false;
-		}
+		KMessageBox::information(this, tr("Remote URLs unimplemented")); //TODO
+		return false;
+// 		KIO::Job *job = KIO::file_copy(QUrl::fromPath(localFileName), url, -1, KIO::Overwrite | KIO::HideProgressInfo);
+// 		if (!KIO::NetAccess::synchronousRun(job, this))
+// 		{
+// //			KMessageBox::information(this, i18nc("@info", "Could not copy temporary file <filename>%1</filename> to <filename>%2</filename>.", localFileName, url.prettyUrl()));
+// 			KMessageBox::information(this, tr("Could not copy temporary file \"%1\" to \"%2\".").arg(localFileName).arg(url.toDisplayString()));
+// 			return false;
+// 		}
 	}
 
 	m_lastUrl = url;
@@ -725,12 +713,12 @@ bool MainWindow::saveUrl(const Url &url)
 	return true;
 }
 
-Url MainWindow::url() const
+QUrl MainWindow::url() const
 {
 	return m_currentUrl;
 }
 
-void MainWindow::setCurrentUrl(const Url &url)
+void MainWindow::setCurrentUrl(const QUrl &url)
 {
 	m_currentUrl = url;
 	m_tikzEditorView->editor()->document()->setModified(false);
@@ -738,7 +726,7 @@ void MainWindow::setCurrentUrl(const Url &url)
 	setWindowTitle(tr("%1[*] - %2").arg(strippedName(m_currentUrl)).arg(KtikzApplication::applicationName()));
 }
 
-QString MainWindow::strippedName(const Url &url) const
+QString MainWindow::strippedName(const QUrl &url) const
 {
 	if (!url.isValid() || url.isEmpty())
 		return "untitled.txt";

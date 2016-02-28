@@ -22,29 +22,21 @@
 #define MAINWINDOW_H
 
 #include <KXmlGuiWindow>
-class KUrl;
 #include <QDateTime>
 #include <QPointer>
+#include <QCompleter>
+#include <QSyntaxHighlighter>
+#include <QLabel>
+#include <QToolButton>
+#include <KRecentFilesAction>
 #include "../common/mainwidget.h"
 
-class QAction;
-class QCloseEvent;
-class QCompleter;
-class QDockWidget;
-class QLabel;
-class QMenu;
-class QSyntaxHighlighter;
-class QToolButton;
-
-class Action;
 class ConfigDialog;
 class LogTextEdit;
-class RecentFilesAction;
 class TikzCommandInserter;
 class TikzEditorView;
 class TikzHighlighter;
 class TikzPreviewController;
-class Url;
 
 /** Provides a tiny application for simple editing of TikZ graphics
  * @author Florian Hackenberger
@@ -58,14 +50,15 @@ public:
 	virtual ~MainWindow();
 
 	virtual QWidget *widget();
+	virtual KActionCollection *actionCollection() const;
 	bool isDocumentModified() const;
 	QString tikzCode() const;
-	Url url() const;
+	QUrl url() const;
 
 	static QList<MainWindow*> mainWindowList() { return s_mainWindowList; }
 
 public slots:
-	void loadUrl(const Url &url);
+	void loadUrl(const QUrl &url);
 	bool save();
 
 signals:
@@ -102,9 +95,9 @@ private:
 	void readSettings();
 	void writeSettings();
 	bool maybeSave();
-	bool saveUrl(const Url &url);
-	void setCurrentUrl(const Url &url);
-	QString strippedName(const Url &url) const;
+	bool saveUrl(const QUrl &url);
+	void setCurrentUrl(const QUrl &url);
+	QString strippedName(const QUrl &url) const;
 	void showPdfPage();
 	void updateCompleter();
 
@@ -137,18 +130,18 @@ private:
 	QToolBar *m_runToolBar;
 	QAction *m_newAction;
 	QAction *m_openAction;
-	RecentFilesAction *m_openRecentAction;
+	KRecentFilesAction *m_openRecentAction;
 	QAction *m_saveAction;
 	QAction *m_saveAsAction;
 	QAction *m_exportAction;
 	QAction *m_exportEpsAction;
 	QAction *m_exportPdfAction;
 	QAction *m_exportPngAction;
-	Action *m_reloadAction;
+	QAction *m_reloadAction;
 	QAction *m_closeAction;
 	QAction *m_exitAction;
 	QAction *m_procStopAction;
-	Action *m_buildAction;
+	QAction *m_buildAction;
 	QAction *m_viewLogAction;
 	QAction *m_shellEscapeAction;
 	QAction *m_configureAction;
@@ -159,8 +152,8 @@ private:
 
 	QPointer<ConfigDialog> m_configDialog;
 
-	Url m_currentUrl;
-	Url m_lastUrl;
+	QUrl m_currentUrl;
+	QUrl m_lastUrl;
 	QDateTime m_lastInternalModifiedDateTime;
 };
 

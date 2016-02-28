@@ -67,11 +67,11 @@ TikzEditor::TikzEditor(QWidget *parent) : QPlainTextEdit(parent)
 		m_highlightCurrentLineColor = lineColor.darker(105);
 	else
 		m_highlightCurrentLineColor = altLineColor;
-	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+	connect(this, &TikzEditor::cursorPositionChanged, this, &TikzEditor::highlightCurrentLine);
 	highlightCurrentLine();
 
-	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(showCursorPosition()));
-	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(matchBrackets()));
+	connect(this, &TikzEditor::cursorPositionChanged, this, &TikzEditor::showCursorPosition);
+	connect(this, &TikzEditor::cursorPositionChanged, this, &TikzEditor::matchBrackets);
 }
 
 TikzEditor::~TikzEditor()
@@ -604,7 +604,7 @@ void TikzEditor::setCompleter(QCompleter *completer)
 	m_completer->setWidget(this);
 	m_completer->setCompletionMode(QCompleter::PopupCompletion);
 	m_completer->setCaseSensitivity(Qt::CaseInsensitive);
-	connect(m_completer, SIGNAL(activated(QString)), this, SLOT(insertCompletion(QString)));
+	connect(m_completer, static_cast<void (QCompleter::*)(const QString&)>(&QCompleter::activated), this, &TikzEditor::insertCompletion);
 }
 
 void TikzEditor::insertCompletion(const QString &completion)

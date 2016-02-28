@@ -15,30 +15,25 @@ set(ktikzpart_SRCS
 	../common/tikzpreviewthread.cpp
 	../common/tikzpreviewcontroller.cpp
 	../common/tikzpreviewgenerator.cpp
-	../common/utils/action.cpp
-	../common/utils/filedialog.cpp
-	../common/utils/lineedit.cpp
-	../common/utils/recentfilesaction.cpp
-	../common/utils/selectaction.cpp
-	../common/utils/standardaction.cpp
-	../common/utils/toggleaction.cpp
-	../common/utils/url.cpp
 )
 
-kde4_add_ui_files(ktikzpart_SRCS
+ki18n_wrap_ui(ktikzpart_SRCS
 	configgeneralwidget.ui
 	../common/templatewidget.ui
 )
 
-kde4_add_kcfg_files(ktikzpart_SRCS ../common/settings.kcfgc)
+kconfig_add_kcfg_files(ktikzpart_SRCS ../common/settings.kcfgc)
 
-kde4_add_plugin(ktikzpart ${ktikzpart_SRCS})
+#kde4_add_plugin(ktikzpart ${ktikzpart_SRCS})
+add_library(ktikzpart MODULE ${ktikzpart_SRCS})
 
-target_link_libraries(ktikzpart ${KDE4_KPARTS_LIBS} ${POPPLER_QT4_LIBRARIES})
+target_include_directories(ktikzpart SYSTEM PRIVATE ${POPPLER_INCLUDE_DIRS})
+target_link_libraries(ktikzpart KF5::Parts KF5::IconThemes ${POPPLER_LIBRARIES})
+
+kcoreaddons_desktop_to_json(ktikzpart ktikzpart.desktop)
 
 install(TARGETS ktikzpart DESTINATION ${PLUGIN_INSTALL_DIR})
 install(FILES ktikzpart.rc DESTINATION ${KTIKZPART_DATA_INSTALL_DIR})
-install(FILES ktikzpart.desktop DESTINATION ${SERVICES_INSTALL_DIR})
 
 add_custom_target(uninstalldirs_part)
 add_custom_command(TARGET uninstalldirs_part

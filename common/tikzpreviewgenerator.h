@@ -89,7 +89,7 @@ protected:
 	void run();
 	void createTempLatexFile();
 	void createTempTikzFile();
-	bool runProcess(const QString &name, const QString &command, const QStringList &arguments, const QString &workingDir = 0);
+	bool runProcess(const QString &name, const QString &command, const QStringList &arguments, const QString &workingDir = QString());
 	bool generatePdfFile();
 
 	TikzPreviewController *m_parent;

@@ -19,18 +19,18 @@
 #include "editgotolinewidget.h"
 
 #include <QKeyEvent>
-#include "../common/utils/icon.h"
+#include <QIcon>
 
 GoToLineWidget::GoToLineWidget(QWidget *parent) : QWidget(parent)
 {
 	ui.setupUi(this);
 	ui.spinBoxGo->setMinimum(1);
-	ui.pushButtonClose->setIcon(Icon("window-close"));
+	ui.pushButtonClose->setIcon(QIcon::fromTheme("window-close"));
 
 	setFocusProxy(ui.spinBoxGo);
 
-	connect(ui.pushButtonGo, SIGNAL(clicked()), this, SLOT(goToLine()));
-	connect(ui.pushButtonClose, SIGNAL(clicked()), this, SLOT(hide()));
+	connect(ui.pushButtonGo, &QPushButton::clicked, this, &GoToLineWidget::goToLine);
+	connect(ui.pushButtonClose, &QPushButton::clicked, this, &GoToLineWidget::hide);
 }
 
 GoToLineWidget::~GoToLineWidget()
@@ -39,7 +39,7 @@ GoToLineWidget::~GoToLineWidget()
 
 void GoToLineWidget::goToLine()
 {
-	emit goToLine(ui.spinBoxGo->value() - 1);
+	emit wentToLine(ui.spinBoxGo->value() - 1);
 }
 
 void GoToLineWidget::setMaximumValue(int maximumValue)

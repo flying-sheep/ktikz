@@ -21,49 +21,41 @@
 #include <QLineEdit>
 #include <QKeyEvent>
 
-#include "../common/utils/icon.h"
-#include "../common/utils/lineedit.h"
+#include <QIcon>
+#include <KLineEdit>
 
 ReplaceWidget::ReplaceWidget(QWidget *parent) : QWidget(parent)
 {
 	ui.setupUi(this);
-	ui.comboBoxFind->setLineEdit(new LineEdit(this));
-	ui.comboBoxReplace->setLineEdit(new LineEdit(this));
-	ui.pushButtonClose->setIcon(Icon("window-close"));
-	ui.pushButtonBackward->setIcon(Icon("go-up"));
-	ui.pushButtonForward->setIcon(Icon("go-down"));
+	ui.comboBoxFind->setLineEdit(new KLineEdit(this));
+	ui.comboBoxReplace->setLineEdit(new KLineEdit(this));
+	ui.pushButtonClose->setIcon(QIcon::fromTheme("window-close"));
+	ui.pushButtonBackward->setIcon(QIcon::fromTheme("go-up"));
+	ui.pushButtonForward->setIcon(QIcon::fromTheme("go-down"));
 
 	setFocusProxy(ui.comboBoxFind);
 
-	connect(ui.pushButtonBackward, SIGNAL(clicked()), this, SLOT(setBackward()));
-	connect(ui.pushButtonForward, SIGNAL(clicked()), this, SLOT(setForward()));
-	connect(ui.pushButtonFind, SIGNAL(clicked()), this, SLOT(doFind()));
-	connect(ui.pushButtonReplace, SIGNAL(clicked()), this, SLOT(doReplace()));
-	connect(ui.pushButtonClose, SIGNAL(clicked()), this, SLOT(hide()));
+	connect(ui.pushButtonBackward, &QPushButton::clicked, this, &ReplaceWidget::setBackward);
+	connect(ui.pushButtonForward, &QPushButton::toggled, this, &ReplaceWidget::setForward);
+	connect(ui.pushButtonFind, &QPushButton::clicked, this, &ReplaceWidget::doFind);
+	connect(ui.pushButtonReplace, &QPushButton::clicked, this, &ReplaceWidget::doReplace);
+	connect(ui.pushButtonClose, &QPushButton::clicked, this, &ReplaceWidget::hide);
 }
 
 ReplaceWidget::~ReplaceWidget()
 {
 }
 
-void ReplaceWidget::setBackward()
+void ReplaceWidget::setBackward(bool backward = true)
 {
-	ui.pushButtonBackward->setChecked(true);
-	ui.pushButtonForward->setChecked(false);
+	ui.pushButtonBackward->setChecked(backward);
+	ui.pushButtonForward->setChecked(!backward);
 }
 
-void ReplaceWidget::setForward()
+void ReplaceWidget::setForward(bool forward = true)
 {
-	ui.pushButtonBackward->setChecked(false);
-	ui.pushButtonForward->setChecked(true);
-}
-
-void ReplaceWidget::setForward(bool forward)
-{
-	if (forward)
-		setForward();
-	else
-		setBackward();
+	ui.pushButtonBackward->setChecked(!forward);
+	ui.pushButtonForward->setChecked(forward);
 }
 
 void ReplaceWidget::hide()
@@ -72,21 +64,17 @@ void ReplaceWidget::hide()
 	emit focusEditor();
 }
 
-void ReplaceWidget::doFind(bool forward)
+void ReplaceWidget::doFind()
 {
 	const QString currentText = ui.comboBoxFind->currentText();
 	if (currentText.isEmpty()) return;
 	if (ui.comboBoxFind->findText(currentText) < 0)
 		ui.comboBoxFind->addItem(currentText);
-
-	emit search(currentText,
-	    ui.checkBoxCaseSensitive->isChecked(),
-	    ui.checkBoxWholeWords->isChecked(), forward);
-}
-
-void ReplaceWidget::doFind()
-{
-	doFind(ui.pushButtonForward->isChecked());
+	
+	emit searched(currentText,
+		ui.checkBoxCaseSensitive->isChecked(),
+		ui.checkBoxWholeWords->isChecked(),
+		ui.pushButtonForward->isChecked());
 }
 
 void ReplaceWidget::doReplace()
@@ -99,7 +87,7 @@ void ReplaceWidget::doReplace()
 	if (ui.comboBoxReplace->findText(replacementText) < 0)
 		ui.comboBoxReplace->addItem(replacementText);
 
-	emit replace(currentText,
+	emit replaced(currentText,
 	    replacementText,
 	    ui.checkBoxCaseSensitive->isChecked(),
 	    ui.checkBoxWholeWords->isChecked(),

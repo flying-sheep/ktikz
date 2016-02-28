@@ -36,8 +36,8 @@ public slots:
 
 signals:
 	void focusEditor();
-	void search(const QString &text, bool isCaseSensitive, bool findWholeWords, bool forward);
-	void replace(const QString &text, const QString &replacement, bool isCaseSensitive, bool findWholeWords, bool forward);
+	void searched(const QString &text, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor = true);
+	void replaced(const QString &text, const QString &replacement, bool isCaseSensitive, bool findWholeWords, bool forward, bool startAtCursor = true);
 
 protected:
 	virtual void showEvent(QShowEvent *event);
@@ -47,13 +47,10 @@ protected slots:
 	void hide();
 
 private:
-	void doFind(bool forward);
-
 	Ui::ReplaceWidget ui;
 
 private slots:
-	void setBackward();
-	void setForward();
+	void setBackward(bool backward);
 	void doReplace();
 };
 

@@ -17,9 +17,12 @@
  ***************************************************************************/
 
 #include "tikzpreview.h"
+#include "mainwidget.h"
+#include <KStandardAction>
+#include <kiconloader.h>
 
-#include <KLocale>
-
+#include <QLocale>
+#include <QAction>
 #include <QApplication>
 #include <QContextMenuEvent>
 #include <QGraphicsPixmapItem>
@@ -31,20 +34,19 @@
 #include <QSettings>
 #include <QToolBar>
 
-#include <poppler-qt4.h>
+#include <poppler-qt5.h>
 
 #include "tikzpreviewthread.h"
-#include "utils/action.h"
-#include "utils/icon.h"
-#include "utils/selectaction.h"
-#include "utils/standardaction.h"
+#include <QIcon>
+#include <KSelectAction>
 
 static const qreal s_minZoomFactor = 0.1;
 static const qreal s_maxZoomFactor = 6;
 
-TikzPreview::TikzPreview(QWidget *parent)
+TikzPreview::TikzPreview(MainWidget *mainWidget, QWidget *parent)
     : QGraphicsView(parent)
 {
+	m_mainWidget = mainWidget;
 	m_tikzScene = new QGraphicsScene(this);
 	m_tikzPixmapItem = m_tikzScene->addPixmap(QPixmap());
 	setScene(m_tikzScene);
@@ -71,7 +73,7 @@ TikzPreview::TikzPreview(QWidget *parent)
 	setZoomFactor(m_zoomFactor);
 
 	m_tikzPreviewThread = new TikzPreviewThread();
-	connect(m_tikzPreviewThread, SIGNAL(showPreview(QImage)), this, SLOT(showPreview(QImage)));
+	connect(m_tikzPreviewThread, &TikzPreviewThread::showPreview, this, &TikzPreview::showPreview);
 }
 
 TikzPreview::~TikzPreview()
@@ -102,33 +104,36 @@ QSize TikzPreview::sizeHint() const
 
 void TikzPreview::createActions()
 {
-	m_zoomInAction = StandardAction::zoomIn(this, SLOT(zoomIn()), this);
-	m_zoomOutAction = StandardAction::zoomOut(this, SLOT(zoomOut()), this);
+	KActionCollection *ac = m_mainWidget->actionCollection();
+	
+	m_zoomInAction = KStandardAction::zoomIn(this, SLOT(zoomIn()), ac);
+	m_zoomOutAction = KStandardAction::zoomOut(this, SLOT(zoomOut()), ac);
 	m_zoomInAction->setStatusTip(tr("Zoom preview in"));
 	m_zoomOutAction->setStatusTip(tr("Zoom preview out"));
 	m_zoomInAction->setWhatsThis(tr("<p>Zoom preview in by a predetermined factor.</p>"));
 	m_zoomOutAction->setWhatsThis(tr("<p>Zoom preview out by a predetermined factor.</p>"));
 
-	m_zoomToAction = new SelectAction(Icon("zoom-original"), tr("&Zoom"), this, "zoom_to");
+	m_zoomToAction = new KSelectAction(QIcon::fromTheme("zoom-original"), tr("&Zoom"), this);
+	ac->addAction("zoom_to", m_zoomToAction);
 	m_zoomToAction->setEditable(true);
 	m_zoomToAction->setToolTip(tr("Select or insert zoom factor here"));
 	m_zoomToAction->setWhatsThis(tr("<p>Select the zoom factor here.  "
 	    "Alternatively, you can also introduce a zoom factor and "
 	    "press Enter.</p>"));
-	connect(m_zoomToAction, SIGNAL(triggered(QString)), this, SLOT(setZoomFactor(QString)));
+	connect(m_zoomToAction, &QAction::triggered, this, &TikzPreview::resetZoomFactor);
 //	createZoomFactorList();
 
-	m_previousPageAction = new Action(Icon("go-previous"), tr("&Previous image"), this, "view_previous_image");
+	m_previousPageAction = ac->addAction("view_previous_image", new QAction(QIcon::fromTheme("go-previous"), tr("&Previous image"), this));
 	m_previousPageAction->setShortcut(tr("Alt+Left", "View|Go to previous page"));
 	m_previousPageAction->setStatusTip(tr("Show previous image in preview"));
 	m_previousPageAction->setWhatsThis(tr("<p>Show the preview of the previous tikzpicture in the TikZ code.</p>"));
-	connect(m_previousPageAction, SIGNAL(triggered()), this, SLOT(showPreviousPage()));
+	connect(m_previousPageAction, &QAction::triggered, this, &TikzPreview::showPreviousPage);
 
-	m_nextPageAction = new Action(Icon("go-next"), tr("&Next image"), this, "view_next_image");
+	m_nextPageAction = ac->addAction("view_next_image", new QAction(QIcon::fromTheme("go-next"), tr("&Next image"), this));
 	m_nextPageAction->setShortcut(tr("Alt+Right", "View|Go to next page"));
 	m_nextPageAction->setStatusTip(tr("Show next image in preview"));
 	m_nextPageAction->setWhatsThis(tr("<p>Show the preview of the next tikzpicture in the TikZ code.</p>"));
-	connect(m_nextPageAction, SIGNAL(triggered()), this, SLOT(showNextPage()));
+	connect(m_nextPageAction, &QAction::triggered, this, &TikzPreview::showNextPage);
 
 	m_previousPageAction->setVisible(false);
 	m_previousPageAction->setEnabled(false);
@@ -264,11 +269,11 @@ void TikzPreview::paintEvent(QPaintEvent *event)
 
 QString TikzPreview::formatZoomFactor(qreal zoomFactor) const
 {
-	QString zoomFactorText = KGlobal::locale()->formatNumber(zoomFactor, 2);
-	zoomFactorText.remove(KGlobal::locale()->decimalSymbol() + "00");
+	QString zoomFactorText = QLocale().toString(zoomFactor, 2);
+	zoomFactorText.remove(QLocale().decimalPoint() + "00");
 	// remove trailing zero in numbers like 12.30
 	if (zoomFactorText.endsWith('0')
-	    && zoomFactorText.indexOf(KGlobal::locale()->decimalSymbol()) >= 0)
+		&& zoomFactorText.indexOf(QLocale().decimalPoint()) >= 0)
 		zoomFactorText.chop(1);
 	zoomFactorText += '%';
 	return zoomFactorText;
@@ -307,12 +312,12 @@ void TikzPreview::createZoomFactorList(qreal newZoomFactor)
 		newZoomFactorPosition = zoomFactorNumber;
 	}
 
-	disconnect(m_zoomToAction, SIGNAL(triggered(QString)), this, SLOT(setZoomFactor(QString)));
+	disconnect(m_zoomToAction, &QAction::triggered, this, &TikzPreview::setZoomFactor);
 	m_zoomToAction->removeAllActions();
 	m_zoomToAction->setItems(zoomFactorList);
 	if (newZoomFactorPosition >= 0)
 		m_zoomToAction->setCurrentItem(newZoomFactorPosition);
-	connect(m_zoomToAction, SIGNAL(triggered(QString)), this, SLOT(setZoomFactor(QString)));
+	connect(m_zoomToAction, &QAction::triggered, this, &TikzPreview::setZoomFactor);
 }
 
 /***************************************************************************/
@@ -341,9 +346,9 @@ void TikzPreview::setZoomFactor(qreal zoomFactor)
 	showPdfPage();
 }
 
-void TikzPreview::setZoomFactor(const QString &zoomFactorText)
+void TikzPreview::resetZoomFactor()
 {
-	setZoomFactor(KGlobal::locale()->readNumber(QString(zoomFactorText).remove('&').remove('%')) / 100.0);
+	setZoomFactor(100.0);
 }
 
 void TikzPreview::zoomIn()

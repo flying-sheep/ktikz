@@ -23,8 +23,7 @@
 #include <QKeyEvent>
 #include <QPushButton>
 #include <QVBoxLayout>
-
-#include "../common/utils/icon.h"
+#include <QIcon>
 
 ReplaceCurrentWidget::ReplaceCurrentWidget(QWidget *parent) : QWidget(parent)
 {
@@ -33,7 +32,7 @@ ReplaceCurrentWidget::ReplaceCurrentWidget(QWidget *parent) : QWidget(parent)
 	QPushButton *replaceAllButton = new QPushButton(tr("Replace &All"));
 	QPushButton *dontReplaceButton = new QPushButton(tr("&Don't Replace"));
 	QPushButton *cancelButton = new QPushButton(tr("&Cancel"));
-	cancelButton->setIcon(Icon("dialog-cancel"));
+	cancelButton->setIcon(QIcon::fromTheme("dialog-cancel"));
 
 	QVBoxLayout *mainLayout = new QVBoxLayout(this);
 	QWidget *buttonsWidget = new QWidget;
@@ -50,10 +49,10 @@ ReplaceCurrentWidget::ReplaceCurrentWidget(QWidget *parent) : QWidget(parent)
 
 	setFocusProxy(m_replaceButton);
 
-	connect(m_replaceButton, SIGNAL(clicked()), this, SLOT(replace()));
-	connect(replaceAllButton, SIGNAL(clicked()), this, SLOT(replaceAll()));
-	connect(dontReplaceButton, SIGNAL(clicked()), this, SLOT(dontReplace()));
-	connect(cancelButton, SIGNAL(clicked()), this, SLOT(hide()));
+	connect(m_replaceButton, &QPushButton::clicked, this, &ReplaceCurrentWidget::replace);
+	connect(replaceAllButton, &QPushButton::clicked, this, &ReplaceCurrentWidget::replaceAll);
+	connect(dontReplaceButton, &QPushButton::clicked, this, &ReplaceCurrentWidget::dontReplace);
+	connect(cancelButton, &QPushButton::clicked, this, &ReplaceCurrentWidget::hide);
 }
 
 ReplaceCurrentWidget::~ReplaceCurrentWidget()
@@ -73,26 +72,26 @@ void ReplaceCurrentWidget::search(const QString &text, const QString &replacemen
 	m_findWholeWords = findWholeWords;
 	m_forward = forward;
 	m_startAtCursor = startAtCursor;
-	emit search(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
+	emit searched(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
 }
 
 void ReplaceCurrentWidget::replace()
 {
-	emit replace(m_replacement);
+	emit replaced(m_replacement);
 	emit setSearchFromBegin(false);
-	emit search(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
+	emit searched(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
 }
 
 void ReplaceCurrentWidget::replaceAll()
 {
-	emit replace(m_replacement);
-	emit replaceAll(m_text, m_replacement, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
+	emit replaced(m_replacement);
+	emit replacedAll(m_text, m_replacement, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
 }
 
 void ReplaceCurrentWidget::dontReplace()
 {
 	emit setSearchFromBegin(false);
-	emit search(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
+	emit searched(m_text, m_isCaseSensitive, m_findWholeWords, m_forward, m_startAtCursor);
 }
 
 void ReplaceCurrentWidget::hide()

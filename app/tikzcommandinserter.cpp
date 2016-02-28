@@ -17,6 +17,8 @@
  ***************************************************************************/
 
 #include "tikzcommandinserter.h"
+#include "mainwindow.h"
+#include <kactioncollection.h>
 
 #include <QApplication>
 #include <QComboBox>
@@ -198,7 +200,7 @@ QMenu *TikzCommandInserter::getMenu(const TikzCommandList &commandList)
 			action = new QAction(name, this);
 			action->setData(commandList.commands.at(i).number); // link to the corresponding item in m_tikzCommandsList
 			action->setStatusTip(commandList.commands.at(i).description);
-			connect(action, SIGNAL(triggered()), this, SLOT(insertTag()));
+			connect(action, &QAction::triggered, this, static_cast<void (TikzCommandInserter::*)()>(&TikzCommandInserter::insertTag));
 		}
 		menu->addAction(action);
 	}
@@ -278,6 +280,8 @@ void TikzCommandInserter::addListWidgetItems(QListWidget *listWidget, const Tikz
 
 QDockWidget *TikzCommandInserter::getDockWidget(QWidget *parent)
 {
+	KActionCollection *ac = static_cast<MainWindow*>(m_parentWidget)->actionCollection();
+	
 	QDockWidget *tikzDock = new QDockWidget(parent);
 	tikzDock->setObjectName("CommandsDock");
 	tikzDock->setAllowedAreas(Qt::AllDockWidgetAreas);
@@ -289,23 +293,23 @@ QDockWidget *TikzCommandInserter::getDockWidget(QWidget *parent)
 	    "changing the category in the combo box.</p>"));
 
 	QAction *focusTikzDockAction = new QAction(parent);
-	focusTikzDockAction->setShortcut(QKeySequence(tr("Alt+I")));
+	ac->setDefaultShortcut(focusTikzDockAction, QKeySequence(tr("Alt+I")));
 	tikzDock->addAction(focusTikzDockAction);
-	connect(focusTikzDockAction, SIGNAL(triggered()), tikzDock, SLOT(setFocus()));
+	connect(focusTikzDockAction, &QAction::triggered, tikzDock, static_cast<void (QDockWidget::*)()>(&QDockWidget::setFocus));
 
 	QLabel *commandsComboLabel = new QLabel(tr("Category:"));
 	QComboBox *commandsCombo = new QComboBox;
 	commandsCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	QStackedWidget *commandsStack = new QStackedWidget;
-	connect(commandsCombo, SIGNAL(currentIndexChanged(int)), commandsStack, SLOT(setCurrentIndex(int)));
+	connect(commandsCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), commandsStack, &QStackedWidget::setCurrentIndex);
 
 	QListWidget *tikzListWidget = new QListWidget;
 	addListWidgetItems(tikzListWidget, m_tikzSections, false); // don't add children
 	tikzListWidget->setMouseTracking(true);
-	connect(tikzListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), this, SLOT(setListStatusTip(QListWidgetItem*)));
-	connect(tikzListWidget, SIGNAL(itemEntered(QListWidgetItem*)), this, SLOT(setListStatusTip(QListWidgetItem*)));
-	connect(tikzListWidget, SIGNAL(itemActivated(QListWidgetItem*)), this, SLOT(insertTag(QListWidgetItem*)));
-//	connect(tikzListWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(insertTag(QListWidgetItem*)));
+	connect(tikzListWidget, &QListWidget::currentItemChanged, this, &TikzCommandInserter::setListStatusTip);
+	connect(tikzListWidget, &QListWidget::itemEntered, this, &TikzCommandInserter::setListStatusTip);
+	connect(tikzListWidget, &QListWidget::itemActivated, this, static_cast<void (TikzCommandInserter::*)(QListWidgetItem*)>(&TikzCommandInserter::insertTag));
+	//	connect(tikzListWidget, &QListWidget::itemClicked, this, &TikzCommandInserter::insertTag);
 	commandsCombo->addItem(tr("General"));
 	commandsStack->addWidget(tikzListWidget);
 
@@ -314,10 +318,10 @@ QDockWidget *TikzCommandInserter::getDockWidget(QWidget *parent)
 		QListWidget *tikzListWidget = new QListWidget;
 		addListWidgetItems(tikzListWidget, m_tikzSections.children.at(i));
 		tikzListWidget->setMouseTracking(true);
-		connect(tikzListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), this, SLOT(setListStatusTip(QListWidgetItem*)));
-		connect(tikzListWidget, SIGNAL(itemEntered(QListWidgetItem*)), this, SLOT(setListStatusTip(QListWidgetItem*)));
-		connect(tikzListWidget, SIGNAL(itemActivated(QListWidgetItem*)), this, SLOT(insertTag(QListWidgetItem*)));
-//		connect(tikzListWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(insertTag(QListWidgetItem*)));
+		connect(tikzListWidget, &QListWidget::currentItemChanged, this, &TikzCommandInserter::setListStatusTip);
+		connect(tikzListWidget, &QListWidget::itemEntered, this, &TikzCommandInserter::setListStatusTip);
+		connect(tikzListWidget, &QListWidget::itemActivated, this, static_cast<void (TikzCommandInserter::*)(QListWidgetItem*)>(&TikzCommandInserter::insertTag));
+	//	connect(tikzListWidget, &QListWidget::itemClicked, this, &TikzCommandInserter::insertTag);
 
 		QString comboItemText = m_tikzSections.children.at(i).title;
 		commandsCombo->addItem(comboItemText.remove('&'));

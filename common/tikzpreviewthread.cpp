@@ -20,7 +20,7 @@
 
 #include <QImage>
 
-#include <poppler-qt4.h>
+#include <poppler-qt5.h>
 
 TikzPreviewThread::TikzPreviewThread(QObject *parent)
     : QThread(parent)

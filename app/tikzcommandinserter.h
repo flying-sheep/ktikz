@@ -20,15 +20,14 @@
 #define TIKZCOMMANDINSERTER_H
 
 #include <QObject>
+#include <QListWidget>
+#include <QDomElement>
+#include <QTextCharFormat>
+#include <QPlainTextEdit>
+#include <QDockWidget>
+#include <QMenu>
 #include <QStringList>
 
-class QDockWidget;
-class QDomElement;
-class QListWidget;
-class QListWidgetItem;
-class QMenu;
-class QPlainTextEdit;
-class QTextCharFormat;
 class HighlightingRule;
 
 struct TikzCommand

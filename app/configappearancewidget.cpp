@@ -23,8 +23,8 @@
 #include <QSettings>
 #include <QTextCharFormat>
 
-#include "../common/utils/colordialog.h"
-#include "../common/utils/fontdialog.h"
+#include <QColorDialog>
+#include <QFontDialog>
 
 ConfigAppearanceWidget::ConfigAppearanceWidget(QWidget *parent)
     : QWidget(parent)
@@ -37,7 +37,7 @@ ConfigAppearanceWidget::ConfigAppearanceWidget(QWidget *parent)
 	buttonGroup->addButton(ui.standardAppearanceCheck);
 	buttonGroup->addButton(ui.customAppearanceCheck);
 	buttonGroup->setExclusive(true);
-	connect(buttonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(toggleCustom()));
+	connect(buttonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &ConfigAppearanceWidget::toggleCustom);
 
 	QPalette palette = ui.itemTable->palette();
 	QColor highlightBackgroundColor(QApplication::style()->standardPalette().color(QPalette::Normal, QPalette::AlternateBase));
@@ -50,10 +50,10 @@ ConfigAppearanceWidget::ConfigAppearanceWidget(QWidget *parent)
 	palette.setColor(QPalette::Disabled, QPalette::Highlight, highlightBackgroundColor);
 	ui.itemTable->setPalette(palette);
 	m_itemHighlighted = -1;
-	connect(ui.itemTable, SIGNAL(currentItemChanged(QTableWidgetItem*,QTableWidgetItem*)), this, SLOT(setItemHighlighted(QTableWidgetItem*)));
+	connect(ui.itemTable, &QTableWidget::currentItemChanged, this, &ConfigAppearanceWidget::setItemHighlighted);
 
-	connect(ui.fontButton, SIGNAL(clicked()), this, SLOT(showFontDialog()));
-	connect(ui.colorButton, SIGNAL(clicked()), this, SLOT(showColorDialog()));
+	connect(ui.fontButton, &QPushButton::clicked, this, &ConfigAppearanceWidget::showFontDialog);
+	connect(ui.colorButton, &QPushButton::clicked, this, &ConfigAppearanceWidget::showColorDialog);
 }
 
 void ConfigAppearanceWidget::readSettings(const QString &settingsGroup)
@@ -259,7 +259,7 @@ void ConfigAppearanceWidget::showFontDialog()
 	bool ok;
 	QFont currentFont;
 	currentFont.fromString(m_itemFonts.at(m_itemHighlighted));
-	const QFont newFont = FontDialog::getFont(&ok, currentFont, this);
+	const QFont newFont = QFontDialog::getFont(&ok, currentFont, this);
 	if (ok)
 	{
 		QTableWidgetItem *item = ui.itemTable->item(m_itemHighlighted, 0);
@@ -273,10 +273,9 @@ void ConfigAppearanceWidget::showColorDialog()
 {
 	if (m_itemHighlighted < 0) return;
 
-	bool ok;
 	const QColor currentColor(m_itemColors.at(m_itemHighlighted));
-	const QColor newColor = ColorDialog::getColor(&ok, currentColor, this);
-	if (ok)
+	const QColor newColor = QColorDialog::getColor(currentColor, this);
+	if (newColor.isValid())
 	{
 		m_itemColors.replace(m_itemHighlighted, newColor.name());
 		ui.itemTable->item(m_itemHighlighted, 0)->setForeground(newColor);

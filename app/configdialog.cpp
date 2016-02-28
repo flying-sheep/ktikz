@@ -18,28 +18,28 @@
 
 #include "configdialog.h"
 
+#include <KHelpClient>
 #include <QKeyEvent>
 #include <QWhatsThis>
+#include <QIcon>
 
 #include "configgeneralwidget.h"
 #include "configeditorwidget.h"
 #include "configappearancewidget.h"
 #include "ktikzapplication.h"
-#include "../common/utils/icon.h"
 
 ConfigDialog::ConfigDialog(QWidget *parent) : KPageDialog(parent)
 {
 	setFaceType(List);
-	setCaption(tr("Configure %1").arg(KtikzApplication::applicationName()));
-	setButtons(KDialog::Ok | KDialog::Cancel | KDialog::Apply | KDialog::Help);
-	setHelp("chap-configuration");
+	setWindowTitle(tr("Configure %1").arg(KtikzApplication::applicationName()));
+	m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply | QDialogButtonBox::Help);
 
 	addPage(generalPage(), tr("&General"), "preferences-desktop-theme");
 	addPage(editorPage(), tr("&Editor"), "accessories-text-editor");
 	addPage(appearancePage(), tr("&Highlighting"), "preferences-desktop-color");
 
-	connect(this, SIGNAL(applyClicked()), this, SLOT(accept()));
-	connect(this, SIGNAL(okClicked()), this, SLOT(accept()));
+	connect(m_buttonBox, &QDialogButtonBox::helpRequested, this, &ConfigDialog::helpRequested);
+	connect(m_buttonBox, &QDialogButtonBox::accepted, this, &ConfigDialog::accept);
 }
 
 void ConfigDialog::addPage(QWidget *widget, const QString &title, const QString &iconName)
@@ -53,7 +53,7 @@ void ConfigDialog::addPage(QWidget *widget, const QString &title, const QString 
 	title2.remove('&');
 	KPageWidgetItem *page = new KPageWidgetItem(widget, title2);
 	page->setHeader(title2);
-	page->setIcon(KIcon(iconName));
+	page->setIcon(QIcon::fromTheme(iconName));
 	KPageDialog::addPage(page);
 }
 
@@ -111,6 +111,10 @@ void ConfigDialog::accept()
 	writeSettings();
 	emit settingsChanged();
 	QDialog::accept();
+}
+
+void ConfigDialog::helpRequested() {
+	KHelpClient::invokeHelp("", "chap-configuration");  //TODO
 }
 
 void ConfigDialog::keyPressEvent(QKeyEvent *event)

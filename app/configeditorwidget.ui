@@ -87,7 +87,7 @@
          </widget>
         </item>
         <item row="0" column="2">
-         <widget class="ColorButton" name="whiteSpacesColorButton">
+         <widget class="KColorButton" name="whiteSpacesColorButton">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -126,7 +126,7 @@
          </widget>
         </item>
         <item row="1" column="2">
-         <widget class="ColorButton" name="tabulatorsColorButton">
+         <widget class="KColorButton" name="tabulatorsColorButton">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -165,7 +165,7 @@
          </widget>
         </item>
         <item row="2" column="2">
-         <widget class="ColorButton" name="matchingBracketsColorButton">
+         <widget class="KColorButton" name="matchingBracketsColorButton">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -204,13 +204,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ColorButton</class>
-   <extends>QToolButton</extends>
-   <header>../common/utils/colorbutton.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>

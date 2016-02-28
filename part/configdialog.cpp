@@ -20,28 +20,29 @@
 
 #include <QCheckBox>
 #include <QSettings>
+#include <QVBoxLayout>
+#include <QDialogButtonBox>
 
 #include "configgeneralwidget.h"
 
 PartConfigDialog::PartConfigDialog(QWidget *parent)
-    : KDialog(parent)
+	: QDialog(parent)
 {
-	setCaption(i18nc("@title:window", "Configure KTikZ Viewer"));
-	setButtons(KDialog::Ok | KDialog::Cancel | KDialog::Apply | KDialog::Default);
-	showButtonSeparator(true);
+	setWindowTitle(i18nc("@title:window", "Configure KTikZ Viewer"));
+	
+	m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
 
 	QWidget *mainWidget = new QWidget(this);
 	QVBoxLayout *mainLayout = new QVBoxLayout(mainWidget);
 	m_configGeneralWidget = new PartConfigGeneralWidget(this);
 	mainLayout->addWidget(viewerWidget());
 	mainLayout->addWidget(m_configGeneralWidget);
-	setMainWidget(mainWidget);
-
-	connect(this, SIGNAL(applyClicked()), this, SLOT(writeSettings()));
-	connect(this, SIGNAL(okClicked()), this, SLOT(writeSettings()));
-	connect(this, SIGNAL(defaultClicked()), this, SLOT(setDefaults()));
-	connect(m_configGeneralWidget, SIGNAL(changed(bool)), this, SLOT(enableButtonApply(bool)));
-	enableButtonApply(false);
+	mainLayout->addWidget(mainWidget);
+	mainLayout->addWidget(m_buttonBox);
+	
+	connect(m_buttonBox, &QDialogButtonBox::accepted, this, &PartConfigDialog::accept);
+	connect(m_buttonBox, &QDialogButtonBox::rejected, this, &PartConfigDialog::reject);
+	connect(m_configGeneralWidget, &PartConfigGeneralWidget::changed, m_buttonBox->button(QDialogButtonBox::Apply), &QPushButton::setEnabled);
 }
 
 PartConfigDialog::~PartConfigDialog()
@@ -59,7 +60,7 @@ QWidget *PartConfigDialog::viewerWidget()
 	    "by another program.</para>"));
 	viewerLayout->addWidget(m_watchFileCheckBox);
 
-	connect(m_watchFileCheckBox, SIGNAL(toggled(bool)), this, SLOT(setModified()));
+	connect(m_watchFileCheckBox, &QCheckBox::toggled, this, &PartConfigDialog::setModified);
 
 	return viewerGroupBox;
 }
@@ -83,7 +84,7 @@ void PartConfigDialog::setModified()
 	QWidget *sendingWidget = qobject_cast<QWidget*>(sender());
 	QSettings settings(ORGNAME, APPNAME);
 	if (sendingWidget->objectName() == QLatin1String("watchFileCheckBox"))
-		enableButtonApply(m_watchFileCheckBox->isChecked() != settings.value("WatchFile", true).toBool());
+		m_buttonBox->button(QDialogButtonBox::Apply)->setEnabled(m_watchFileCheckBox->isChecked() != settings.value("WatchFile", true).toBool());
 }
 
 void PartConfigDialog::writeSettings()
@@ -93,6 +94,6 @@ void PartConfigDialog::writeSettings()
 	QSettings settings(ORGNAME, APPNAME);
 	settings.setValue("WatchFile", m_watchFileCheckBox->isChecked());
 
-	enableButtonApply(false);
+	m_buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
 	emit settingsChanged("preferences");
 }

@@ -19,14 +19,14 @@
 #include "configeditorwidget.h"
 
 #include <QSettings>
-#include "../common/utils/fontdialog.h"
+#include <QFontDialog>
 
 ConfigEditorWidget::ConfigEditorWidget(QWidget *parent)
     : QWidget(parent)
 {
 	ui.setupUi(this);
 
-	connect(ui.generalFontButton, SIGNAL(clicked()), this, SLOT(selectFont()));
+	connect(ui.generalFontButton, &QPushButton::clicked, this, &ConfigEditorWidget::selectFont);
 }
 
 void ConfigEditorWidget::readSettings(const QString &settingsGroup)
@@ -39,9 +39,9 @@ void ConfigEditorWidget::readSettings(const QString &settingsGroup)
 	ui.showWhiteSpacesCheck->setChecked(settings.value("ShowWhiteSpaces", false).toBool());
 	ui.showTabulatorsCheck->setChecked(settings.value("ShowTabulators", false).toBool());
 	ui.showMatchingBracketsCheck->setChecked(settings.value("ShowMatchingBrackets", true).toBool());
-	ui.whiteSpacesColorButton->setColor(settings.value("ColorWhiteSpaces", Qt::gray).value<QColor>());
-	ui.tabulatorsColorButton->setColor(settings.value("ColorTabulators", Qt::gray).value<QColor>());
-	ui.matchingBracketsColorButton->setColor(settings.value("ColorMatchingBrackets", Qt::yellow).value<QColor>());
+	ui.whiteSpacesColorButton->setColor(settings.value("ColorWhiteSpaces", QColor(Qt::gray)).value<QColor>());
+	ui.tabulatorsColorButton->setColor(settings.value("ColorTabulators", QColor(Qt::gray)).value<QColor>());
+	ui.matchingBracketsColorButton->setColor(settings.value("ColorMatchingBrackets", QColor(Qt::yellow)).value<QColor>());
 	ui.useCompletionCheck->setChecked(settings.value("UseCompletion", true).toBool());
 	settings.endGroup();
 }
@@ -64,7 +64,7 @@ void ConfigEditorWidget::writeSettings(const QString &settingsGroup)
 void ConfigEditorWidget::selectFont()
 {
 	bool ok;
-	const QFont newFont = FontDialog::getFont(&ok, m_generalFont, this);
+	const QFont newFont = QFontDialog::getFont(&ok, m_generalFont, this);
 	if (ok)
 	{
 		m_generalFont = newFont;

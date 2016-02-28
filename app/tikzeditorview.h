@@ -20,14 +20,14 @@
 #define TIKZEDITORVIEW_H
 
 #include <QWidget>
+#include "mainwindow.h"
+#include <QCompleter>
+#include <QToolBar>
+#include <QMenu>
+#include <QPlainTextEdit>
 //#include "tikzcommandinserter.h"
 
-class QAction;
-class QCompleter;
-class QMenu;
-//class QSyntaxHighlighter;
-class QPlainTextEdit;
-class QToolBar;
+
 class GoToLineWidget;
 class ReplaceWidget;
 class ReplaceCurrentWidget;
@@ -82,7 +82,7 @@ private:
 	void createActions();
 	void setLine(int lineNumber);
 
-	QWidget *m_parentWidget;
+	MainWindow *m_parentWidget;
 	TikzEditor *m_tikzEditor;
 	ReplaceWidget *m_replaceWidget;
 	ReplaceCurrentWidget *m_replaceCurrentWidget;
